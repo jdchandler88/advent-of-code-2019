@@ -1,5 +1,5 @@
 #include <unity.h>
-#include <fuelCalculator.h>
+#include "fuelCalculator.h"
 
 void setUp() {}
 
@@ -16,24 +16,26 @@ void tearDown() {}
 **/
 
 void massOf12ShouldReturn2() {
-
+    TEST_ASSERT_EQUAL_INT (2, calculateFuel(12));
 }
 
 void massOf14ShouldReturn2() {
-
+    TEST_ASSERT_EQUAL_INT (2, calculateFuel(14));
 }
 
 void massOf1969Shouldreturn654() {
-
+    TEST_ASSERT_EQUAL_INT (654, calculateFuel(1969));
 }
 
 void massOf100756ShouldReturn33583() {
-
+    TEST_ASSERT_EQUAL_INT (33583, calculateFuel(100756));
 }
 
 // not needed when using generate_test_runner.rb
 int main(void) {
     UNITY_BEGIN();
-    RUN_TEST(testFunction);
+    RUN_TEST(massOf14ShouldReturn2);
+    RUN_TEST(massOf1969Shouldreturn654);
+    RUN_TEST(massOf100756ShouldReturn33583);
     return UNITY_END();
 }
