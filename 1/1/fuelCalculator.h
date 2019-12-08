@@ -1,5 +1,7 @@
 #include <stdio.h>
 #include <math.h>
+#include <utils.h>
+#include <stdlib.h>
 
 /**
  * Fuel required to launch a given module is based 
@@ -11,12 +13,22 @@ int calculateFuel(int mass) {
     return (int)floor(mass/3) - 2;
 }
 
+static int fuel = 0;
+void accumulateMass(const char* massString) {
+    int mass = atoi(massString);
+    fuel += calculateFuel(mass);
+}
+
 #ifndef TEST
 int main(int argc, char** argv) {
-    printf("argc=%i\n", argc);
-    for (int i=0; i<argc; i++) {
-        printf("arg %i = %s\n", i, argv[i]);
+    if (argc <= 1) {
+        return 1;   //no file provided
     }
+    //just assume a file. we would be robust if this were for production
+    FILE* f = fopen(argv[1], "r");
+    readLines(f, accumulateMass);
+    fclose(f);
+    printf("total fuel = %i\n", fuel);
     return 0;
 }
 #endif

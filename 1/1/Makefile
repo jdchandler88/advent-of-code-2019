@@ -1,7 +1,7 @@
 .PHONY : unity clean all
 
 clean :
-	rm test mass
+	rm -f mass test
 
 all : clean mass test
 
@@ -12,7 +12,7 @@ libunity.a :
 	make ../../Unity/src/Makefile
 
 mass : unity
-	gcc -o mass -E fuelCalculator.c
+	gcc -o mass -I../../utils fuelCalculator.c ../../utils/utils.c
 
 test : unity test.c
-	gcc -o test test.c -I../../Unity/src -L../../Unity/src -lunity -DTEST
+	gcc -o test -I../../Unity/src -I../../utils test.c  -L../../Unity/src -lunity -DTEST 
