@@ -9,7 +9,7 @@ This will make both the executable and the test cases.
 
 # Run the code
 ```bash
-./mass input.txt
+./exe input.txt
 ```
 This will run with the input given by adventofcode. However, if you want to use your input, create a file and pass it to the executable.
 
