@@ -12,8 +12,11 @@ int calculateFuel(int mass) {
 }
 
 #ifndef TEST
-int main() {
-    printf("ohhhhh");
+int main(int argc, char** argv) {
+    printf("argc=%i\n", argc);
+    for (int i=0; i<argc; i++) {
+        printf("arg %i = %s\n", i, argv[i]);
+    }
     return 0;
 }
 #endif

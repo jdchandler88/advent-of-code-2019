@@ -12,7 +12,7 @@ libunity.a :
 	make ../../Unity/src/Makefile
 
 mass : unity
-	gcc -o mass fuelCalculator.h
+	gcc -o mass -E fuelCalculator.c
 
 test : unity test.c
 	gcc -o test test.c -I../../Unity/src -L../../Unity/src -lunity -DTEST
