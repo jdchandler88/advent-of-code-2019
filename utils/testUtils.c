@@ -48,22 +48,28 @@ void copyCopiesStringLarge() {
 void parseParsesSpaces() {
     const char* string = "a b c d e";
     const char* expected[] = {"a", "b", "c", "d", "e"};
-    const char** actual = parseString(string, " ");
+    int num;
+    const char** actual = parseString(string, " ", &num);
     TEST_ASSERT_EQUAL_STRING_ARRAY(expected, actual, 5);
+    TEST_ASSERT_EQUAL_INT(num, 5);
 }
 
 void parseParsesCommas() {
     const char* string = "a,b,c,d,e";
     const char* expected[] = {"a", "b", "c", "d", "e"};
-    const char** actual = parseString(string, ",");
+    int num;
+    const char** actual = parseString(string, ",", &num);
     TEST_ASSERT_EQUAL_STRING_ARRAY(expected, actual, 5);
+    TEST_ASSERT_EQUAL_INT(num, 5);
 }
 
 void parseParsesSpacesAndCommas() {
     const char* string = "a, b, c,d e"; //space AND comma, comma, space
     const char* expected[] = {"a", "b", "c", "d", "e"};
-    const char** actual = parseString(string, " ,");
+    int num;
+    const char** actual = parseString(string, " ,", &num);
     TEST_ASSERT_EQUAL_STRING_ARRAY(expected, actual, 5);
+    TEST_ASSERT_EQUAL_INT(num, 5);
 }
 
 // not needed when using generate_test_runner.rb

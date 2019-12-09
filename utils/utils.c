@@ -18,7 +18,7 @@ void readLines(FILE* file, void (*lineCallback)(const char*)) {
     free(line);
 }
 
-const char** parseString(const char* string, const char* delimiters) {
+const char** parseString(const char* string, const char* delimiters, int* numberStringsParsed) {
     char* stringCopy = (char*)copyString(string);
 
     //storage into which parsed tokens are placed
@@ -45,6 +45,9 @@ const char** parseString(const char* string, const char* delimiters) {
     }
     //we're finished parsing the string. delete the bufferspace
     free((void*)stringCopy);
+
+    //return values
+    *numberStringsParsed = tokensSize;
     return tokens;
 }
 
