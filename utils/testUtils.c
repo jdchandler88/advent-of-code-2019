@@ -31,10 +31,50 @@ void readLinesShouldReturnZeroLinesWithEmptyFile() {
     fclose(threeLinesFile);
 }
 
+void copyCopiesStringSmall() {
+    const char* orig = "small";
+    const char* copy = copyString(orig);
+    TEST_ASSERT_EQUAL_STRING(orig, copyString(orig));
+    free((void*)copy);
+}
+
+void copyCopiesStringLarge() {
+    const char* orig = "abdefajsflkajsd;flkjasd;lfkjasd;flkjasd;flkjasd;flkjasdf;llkjasdf;lkjsdaf;lkjasdf;lkjasdfl;kjasdf;lkj498723984729837498237498ohdfjkhsdkjfhaslkdjfhsadfsdaflkasjdf";
+    const char* copy = copyString(orig);
+    TEST_ASSERT_EQUAL_STRING(orig, copyString(orig));
+    free((void*)copy);
+}
+
+void parseParsesSpaces() {
+    const char* string = "a b c d e";
+    const char* expected[] = {"a", "b", "c", "d", "e"};
+    const char** actual = parseString(string, " ");
+    TEST_ASSERT_EQUAL_STRING_ARRAY(expected, actual, 5);
+}
+
+void parseParsesCommas() {
+    const char* string = "a,b,c,d,e";
+    const char* expected[] = {"a", "b", "c", "d", "e"};
+    const char** actual = parseString(string, ",");
+    TEST_ASSERT_EQUAL_STRING_ARRAY(expected, actual, 5);
+}
+
+void parseParsesSpacesAndCommas() {
+    const char* string = "a, b, c,d e"; //space AND comma, comma, space
+    const char* expected[] = {"a", "b", "c", "d", "e"};
+    const char** actual = parseString(string, " ,");
+    TEST_ASSERT_EQUAL_STRING_ARRAY(expected, actual, 5);
+}
+
 // not needed when using generate_test_runner.rb
 int main(void) {
     UNITY_BEGIN();
     RUN_TEST(readLinesShouldReturnThreeLinesWithThreeLinesDotText);
     RUN_TEST(readLinesShouldReturnZeroLinesWithEmptyFile);
+    RUN_TEST(copyCopiesStringSmall);
+    RUN_TEST(copyCopiesStringLarge);
+    RUN_TEST(parseParsesSpaces);
+    RUN_TEST(parseParsesCommas);
+    RUN_TEST(parseParsesSpacesAndCommas);
     return UNITY_END();
 }
