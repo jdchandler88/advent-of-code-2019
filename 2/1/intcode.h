@@ -10,9 +10,3 @@ typedef enum OpCode {
 void executeProgram(int* program, int programLength);
 
 void executeInstruction(int* program, int* programCounter);
-
-#ifndef TEST
-int main(int argc, char** argv) {
-    return 0;
-}
-#endif
