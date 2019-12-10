@@ -30,7 +30,7 @@ int main(int argc, char** argv) {
         printf("yikes, received %i routes but expected 2. exiting.\n", numRoutes);
         exit(1);
     }
-    int minDistance = calculateMinIntersectionDistanceFromRouteStrings(route1, route2);
+    int minDistance = calculateMinIntersectionStepsFromRouteStrings(route1, route2);
     printf("min intersection distance = %i\n", minDistance);
     free((void*)route1);
     free((void*)route2);

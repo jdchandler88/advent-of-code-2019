@@ -30,7 +30,7 @@ void tearDown() {}
 void testFirstWires() {
     const char* route1 = "R8,U5,L5,D3";
     const char* route2 = "U7,R6,D4,L4";
-    TEST_ASSERT_EQUAL_INT(30, calculateMinIntersectionDistanceFromRouteStrings(route1, route2));
+    TEST_ASSERT_EQUAL_INT(30, calculateMinIntersectionStepsFromRouteStrings(route1, route2));
 }
 
 /**
@@ -40,7 +40,7 @@ void testFirstWires() {
 void testSecondWires() {
     const char* route1 = "R75,D30,R83,U83,L12,D49,R71,U7,L72";
     const char* route2 = "U62,R66,U55,R34,D71,R55,D58,R83";
-    TEST_ASSERT_EQUAL_INT(610, calculateMinIntersectionDistanceFromRouteStrings(route1, route2));
+    TEST_ASSERT_EQUAL_INT(610, calculateMinIntersectionStepsFromRouteStrings(route1, route2));
 }
 
 /**
@@ -50,7 +50,7 @@ void testSecondWires() {
 void testThirdWires() {
     const char* route1 = "R98,U47,R26,D63,R33,U87,L62,D20,R33,U53,R51";
     const char* route2 = "U98,R91,D20,R16,D67,R40,U7,R15,U6,R7";
-    TEST_ASSERT_EQUAL_INT(410, calculateMinIntersectionDistanceFromRouteStrings(route1, route2));
+    TEST_ASSERT_EQUAL_INT(410, calculateMinIntersectionStepsFromRouteStrings(route1, route2));
 }
 
 void testParseMovements() {

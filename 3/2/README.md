@@ -2,6 +2,10 @@
 Part 1 requirement is augmented such that the signal delay must be minimized. In other words, the least *combined number of steps for **each wire*** 
 must be calculated. The minimum of that number should be returned.
 
+In retrospect, we're sort of rewarded for going a brute-force approach in mapping routes in this second part. Imagine I went with the solution
+for line equations and calculating intersections that way. There would be no mechanism in place for iterating over the path. I just had to make 
+slight modifications for the approach I chose. Lucky!
+
 # Build the code
 ```bash
 make all
