@@ -1,5 +1,5 @@
 #include <unity.h>
-#include "intcode.h"
+#include "sol.h"
 
 int programCounter = 0;
 

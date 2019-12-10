@@ -12,7 +12,7 @@ libunity.a :
 	make ../../Unity/src/Makefile
 
 exe : unity
-	gcc -o exe -I../../utils -I. ../../utils/utils.c intcode.c main.c  
+	gcc -o exe -I../../utils -I. ../../utils/utils.c sol.c main.c  
 
 test : unity test.c
-	gcc -o test -I../../Unity/src -I../../utils intcode.c test.c ../../utils/utils.c  -L../../Unity/src -lunity -DTEST 
+	gcc -o test -I../../Unity/src -I../../utils sol.c test.c ../../utils/utils.c  -L../../Unity/src -lunity -DTEST 

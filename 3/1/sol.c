@@ -1,15 +1,15 @@
-#include "wires.h"
+#include "sol.h"
 #include "utils.h"
 #include <stdlib.h>
 #include <string.h>
 #include <math.h>
 
-int calculateMinIntersectionStepsFromRouteStrings(const char* route1String, const char* route2String) {
+int calculateMinIntersectionDistanceFromRouteStrings(const char* route1String, const char* route2String) {
     int sizeofRoute1;
     struct Movement** route1 = parseMovements(route1String, &sizeofRoute1);
     int sizeofRoute2;
     struct Movement** route2 = parseMovements(route2String, &sizeofRoute2);
-    int minDistance = calculateMinIntersectionSteps(route1, sizeofRoute1, route2, sizeofRoute2);
+    int minDistance = calculateMinIntersectionDistance(route1, sizeofRoute1, route2, sizeofRoute2);
     //free memory
     freeArray((void**)route1, sizeofRoute1);
     freeArray((void**)route2, sizeofRoute2);
@@ -67,32 +67,57 @@ struct Point* nextPoint(struct Point* point) {
     return point->next;
 }
 
-int calculateMinIntersectionSteps(struct Movement** route1, int route1Len, struct Movement** route2, int route2Len) {
+/*
+Seems like there are some options if you're going to go the route of storing information about a wire's location. 
+The general algorithm i'll use is: plot out the first wire in memory. Then, follow the path of the second wire, 
+checking at each location in the grid if it exists for the other wire.
+
+A hashmap would be a good storage mechanism. We would store an associative array of coordinates that
+exist for a wire. Then, when mapping the second wire, we can simply check existence of a coordinate in that
+storage to see if there is an intersection.
+
+A linked list could work, too. Only problem is we need to possibly iterate over every element to see if the first
+wire has a location equal to the second. A linked list node would contain an x, y, and a pointer to the next node.
+
+A 2D array would work as well. Grow the array as large as necessary. For instance, make the array as large as necessary
+for the first direction. Then, if more directions make it need to grow, then grow it. Buuut, what if it needs to grow *backwards?*
+How to handle that? Could have two arrays, one for 0+ and one for -.
+
+
+*************
+
+After thinking about it some more, a mroe  efficient approach would be to calculate a line from each segment and see if those lines intersect.
+Can do some simple linear algebra to determine intersection points. For instance, a vertical line with origin (0,0) 
+has a certain equation. The intersection with a segment of a different wire can easily be calculated. We'll need to limit intersection logic
+with the distance of that segment (i.e. lines are not infinite)
+
+*************
+
+Going with the linked list. Just the easiest to implement.
+
+*/
+int calculateMinIntersectionDistance(struct Movement** route1, int route1Len, struct Movement** route2, int route2Len) {
     //map routes using movements
     struct Point* route1FirstPoint = mapRoute(route1, route1Len);
     struct Point* route2FirstPoint = mapRoute(route2, route2Len);
 
-    int minSteps = __INT_MAX__;
+    int minDistance = __INT_MAX__;
     //for every point in route 2, see if it exists in route 1. if so, then calculate the distance
     struct Point* currentRoute2Point = route2FirstPoint;
-    int route2StepsCount = 0;
     while (currentRoute2Point != NULL) {
         struct Point* currentRoute1Point = route1FirstPoint;
-        int route1StepsCount = 0;
         while (currentRoute1Point != NULL) {
             //check points are same BUT ALSO NOT AT ORIGIN!
             if (currentRoute2Point->x == currentRoute1Point->x && currentRoute2Point->y == currentRoute1Point->y && !(currentRoute2Point->x == 0 && currentRoute2Point->y == 0) ) {
-                int steps = route2StepsCount + route1StepsCount;
+                int distance = abs(currentRoute2Point->x) + abs(currentRoute2Point->y);
                 printf("Found intersection at: (%i,%i)\n", currentRoute2Point->x, currentRoute2Point->y);
-                if (steps < minSteps) {
-                    minSteps = steps;
+                if (distance < minDistance) {
+                    minDistance = distance;
                 }
             }
             currentRoute1Point = currentRoute1Point->next;
-            route1StepsCount++;
         }
         currentRoute2Point = currentRoute2Point->next;
-        route2StepsCount++;
     }
 
     // //free up memory
@@ -100,7 +125,7 @@ int calculateMinIntersectionSteps(struct Movement** route1, int route1Len, struc
     freeLinkedList((void*)route2FirstPoint, (void*(*)(void*))nextPoint);
 
     //dat result doe
-    return minSteps;
+    return minDistance;
 }
 
 struct Movement** parseMovements(const char* route, int* numMovements) {

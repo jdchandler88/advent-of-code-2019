@@ -1,5 +1,5 @@
 #include <unity.h>
-#include "wires.h"
+#include "sol.h"
 
 int programCounter = 0;
 

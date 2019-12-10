@@ -12,4 +12,4 @@ libunity.a :
 	make ../../Unity/src/Makefile
 
 exe : unity
-	gcc -o exe -I../../utils -I../1 ../../utils/utils.c ../1/intcode.c main.c  
+	gcc -o exe -I../../utils -I../1 ../../utils/utils.c ../1/sol.c main.c  

@@ -12,7 +12,7 @@ libunity.a :
 	make ../../Unity/src/Makefile
 
 exe : unity
-	gcc -o exe -I../../utils fuelCalculator.c ../../utils/utils.c
+	gcc -o exe -I../../utils sol.c ../../utils/utils.c
 
 test : unity test.c
 	gcc -o test -I../../Unity/src -I../../utils test.c  -L../../Unity/src -lunity -DTEST 

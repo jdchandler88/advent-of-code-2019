@@ -1,4 +1,4 @@
-#include "intcode.h"
+#include "sol.h"
 #include "utils.h"
 #include <stdio.h>
 #include <stdlib.h>
@@ -50,7 +50,8 @@ static void programStringCallback(const char* programString) {
 
 int main(int argc, char** argv) {
     if (argc != 3) {    //need name of program (always there), file, and desiredOutput. IN THAT ORDER
-        exit(0);
+        printf("YO! I need both the input program AND the desired output. IN THAT ORDER LOLz\n");
+        exit(1);
     }
     FILE* file = fopen(argv[1], "r");
     desiredOutput = atoi(argv[2]);
