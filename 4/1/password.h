@@ -1,3 +1,5 @@
-int testPasswordRangeString(char* range);
+#include <stdbool.h>
 
-int testPassword(char* password);
+bool testPasswordRangeString(char* range);
+
+bool testPassword(int beginRange, int endRange, char* password);

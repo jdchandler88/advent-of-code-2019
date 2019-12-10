@@ -4,7 +4,7 @@
 #include <stdlib.h>
 
 static void programStringCallback(const char* line) {
-    printf("Input range = %s", line);
+    testPasswordRangeString(line);
 }
 
 int main(int argc, char** argv) {
