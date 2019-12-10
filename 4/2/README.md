@@ -1,4 +1,4 @@
-# Day 4, part 1
+# Day 4, part 2
 This is the code to find all possible passwords within a range. Now there's an extra rule.
 An adjacent group cannot be greater than 2 AND count toward satisfying the rule. If there is
 another group that is size 2, then that will count. In other words, there must be at least one
