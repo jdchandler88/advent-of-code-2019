@@ -4,7 +4,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-bool testPasswordRangeString(char* range) {
+bool testPasswordRangeString(const char* range) {
     //format is int-int
     int numRange;
     const char** ranges = parseString(range, "-", &numRange);
@@ -23,7 +23,7 @@ bool testPasswordRangeString(char* range) {
             printf("found a possible password: %i\n", i);
         }
     }
-    printf("There are %i possible passwords.", count);
+    printf("There are %i possible passwords.\n", count);
 }
 
 /**
