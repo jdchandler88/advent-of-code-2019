@@ -16,3 +16,14 @@ const char** parseString(const char* string, const char* delimiters, int* number
  * copy string
  **/
 const char* copyString(const char* string);
+
+/**
+ * frees array of pointers and the array storage itself
+ **/ 
+void freeArray(void** array, int numElements);
+
+/**
+ * frees linked list. the second argument is a function pointer that should return the next
+ * element in the linked list.
+ **/
+void freeLinkedList(void* node, void* (*next)(void*));

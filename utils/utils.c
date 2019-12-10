@@ -57,3 +57,20 @@ const char* copyString(const char* string) {
     strcpy(copy, string);
     return copy;
 }
+
+void freeArray(void** array, int size) {
+    for (int i=0; i<size; i++) {
+        free(array[i]);
+    }
+    free(array);
+}
+
+void freeLinkedList(void* node, void* (*next)(void*)) {
+    void* previousNode = node;
+    void* currentNode = next(previousNode);
+    while (currentNode != NULL) {
+        free((void*)previousNode);
+        previousNode = currentNode;
+        currentNode = next(currentNode);
+    }
+}
