@@ -3,6 +3,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+static InputReader reader;
+static OutputWriter writer;
+
 static void programStringCallback(const char* programString) {
     //parse the program
     int programSize;
@@ -15,7 +18,7 @@ static void programStringCallback(const char* programString) {
     }
     free((void*)parsedProgram);
     //do the program
-    executeProgram(program, programSize);
+    executeProgram(program, programSize, reader, writer);
     //free the program storage
     free((void*)program);
 }

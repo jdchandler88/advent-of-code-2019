@@ -3,60 +3,25 @@
 
 int programCounter = 0;
 
+const char* input;
+
+int output;
+
+//it's up to each test to set the value of input to be returned by the reader
+const char* readInput() {
+    return input;
+}
+
+void writeOutput(int programOutput) {
+    output = programOutput;
+}
+
 void setUp() {
     programCounter = 0;
+    input = NULL;
 }
 
 void tearDown() {}
-
-/**
- * 'Acceptance criteria' used for tests
-    1,0,0,0,99 becomes 2,0,0,0,99 (1 + 1 = 2).
-    2,3,0,3,99 becomes 2,3,0,6,99 (3 * 2 = 6).
-    2,4,4,5,99,0 becomes 2,4,4,5,99,9801 (99 * 99 = 9801).
-    1,1,1,4,99,5,6,0,99 becomes 30,1,1,4,2,5,6,0,99.
- * 
-**/
-
-//1,0,0,0,99 becomes 2,0,0,0,99 (1 + 1 = 2).
-void testFirstProgram() {
-    int programSize = 5;
-    int program[] = {1,0,0,0,99};
-    int expected[] = {2,0,0,0,99};
-    //execute program
-    executeProgram(program, programSize);
-    TEST_ASSERT_EQUAL_INT_ARRAY(expected, program, programSize);
-}
-
-//2,3,0,3,99 becomes 2,3,0,6,99 (3 * 2 = 6).
-void testSecondProgram() {
-    int programSize = 5;
-    int program[] = {2,3,0,3,99};
-    int expected[] = {2,3,0,6,99};
-    //execute program
-    executeProgram(program, programSize);
-    TEST_ASSERT_EQUAL_INT_ARRAY(expected, program, programSize);
-}
-
-//2,4,4,5,99,0 becomes 2,4,4,5,99,9801 (99 * 99 = 9801).
-void testThirdProgram() {
-    int programSize = 6;
-    int program[] = {2,4,4,5,99,0};
-    int expected[] = {2,4,4,5,99,9801};
-    //execute program
-    executeProgram(program, programSize);
-    TEST_ASSERT_EQUAL_INT_ARRAY(expected, program, programSize);
-}
-
-//1,1,1,4,99,5,6,0,99 becomes 30,1,1,4,2,5,6,0,99
-void testFourthProgram() {
-    int programSize = 9;
-    int program[] = {1,1,1,4,99,5,6,0,99};
-    int expected[] = {30,1,1,4,2,5,6,0,99};
-    //execute program
-    executeProgram(program, programSize);
-    TEST_ASSERT_EQUAL_INT_ARRAY(expected, program, programSize);
-}
 
 /**
  * new requirements
@@ -97,9 +62,51 @@ DE - two-digit opcode,      02 == opcode 2
                                   omitted due to being a leading zero
  **/ 
 void testParsingMixedModeInstruction() {
-    const char* opcode = "1002";
-    //parse the opcode into a struct and make assertions
-    TEST_ASSERT_EQUAL_INT(0, 1);
+    int instructionInt = 1002;
+    //parse the opcode into a struct
+    struct Instruction* instruction = parseInstruction(instructionInt);
+    //make the assertions
+    TEST_ASSERT_EQUAL_INT(2, instruction->opcode);
+    TEST_ASSERT_EQUAL_INT(0, instruction->parameter->mode);
+    TEST_ASSERT_EQUAL_INT(1, instruction->parameter->next->mode);
+    TEST_ASSERT_EQUAL_INT(0, instruction->parameter->next->next->mode);
+}
+
+void testParsingAddMixedModeInstruction() {
+    int instructionInt = 10101;
+    //parse the opcode into a struct
+    struct Instruction* instruction = parseInstruction(instructionInt);
+    //make the assertions
+    TEST_ASSERT_EQUAL_INT(1, instruction->opcode);
+    TEST_ASSERT_EQUAL_INT(1, instruction->parameter->mode);
+    TEST_ASSERT_EQUAL_INT(0, instruction->parameter->next->mode);
+    TEST_ASSERT_EQUAL_INT(1, instruction->parameter->next->next->mode);
+}
+
+void testParsingInputInstruction() {
+    int instructionInt = 03;
+    //parse the opcode into a struct
+    struct Instruction* instruction = parseInstruction(instructionInt);
+    //make the assertions
+    TEST_ASSERT_EQUAL_INT(3, instruction->opcode);
+    TEST_ASSERT_EQUAL_INT(0, instruction->parameter->mode);
+}
+
+void testParsingOutputInstruction() {
+    int instructionInt = 04;
+    //parse the opcode into a struct
+    struct Instruction* instruction = parseInstruction(instructionInt);
+    //make the assertions
+    TEST_ASSERT_EQUAL_INT(4, instruction->opcode);
+    TEST_ASSERT_EQUAL_INT(0, instruction->parameter->mode);
+}
+
+void testParsingHaltInstruction() {
+    int instructionInt = 99;
+    //parse the opcode into a struct
+    struct Instruction* instruction = parseInstruction(instructionInt);
+    //make the assertions
+    TEST_ASSERT_EQUAL_INT(99, instruction->opcode);
 }
 
 /**
@@ -118,7 +125,7 @@ void testExecuteMixedModeInstruction() {
     int program[] = {1002,4,3,4,33};
     int expected[] = {1002,4,3,4,99};
     //execute program
-    executeProgram(program, programSize);
+    executeProgram(program, programSize, readInput, writeOutput);
     TEST_ASSERT_EQUAL_INT_ARRAY(expected, program, programSize);
 }
 
@@ -130,9 +137,11 @@ void testExecuteMixedModeInstruction() {
 void testInput() {
     int programSize = 3;
     int program[] = {3,1,99};
-    int expected[] = {30,1234,99};
+    int expected[] = {3,1234,99};
+    //test input
+    input = "1234";
     //execute program
-    executeProgram(program, programSize);
+    executeProgram(program, programSize, readInput, writeOutput);
     TEST_ASSERT_EQUAL_INT_ARRAY(expected, program, programSize);
 }
 
@@ -145,8 +154,8 @@ void testOutput() {
     int program[] = {4,0,99};
     //execute program
     //need to add 'ouptput writer' that will capture output to wherever we specify
-    executeProgram(program, programSize);
-    TEST_ASSERT_EQUAL_INT(0, 1);
+    executeProgram(program, programSize, readInput, writeOutput);
+    TEST_ASSERT_EQUAL_INT(4, output);
 }
 
 /**
@@ -159,18 +168,18 @@ void testSimpleIOProgram() {
     int program[] = {3,0,4,0,99};
     //execute program
     //need to add 'ouptput writer' that will capture output to wherever we specify
-    executeProgram(program, programSize);
+    executeProgram(program, programSize, readInput, writeOutput);
     TEST_ASSERT_EQUAL_INT(0, 1);
 }
 
 // not needed when using generate_test_runner.rb
 int main(void) {
     UNITY_BEGIN();
-    RUN_TEST(testFirstProgram);
-    RUN_TEST(testSecondProgram);
-    RUN_TEST(testThirdProgram);
-    RUN_TEST(testFourthProgram);
     RUN_TEST(testParsingMixedModeInstruction);
+    RUN_TEST(testParsingAddMixedModeInstruction);
+    RUN_TEST(testParsingInputInstruction);
+    RUN_TEST(testParsingOutputInstruction);
+    RUN_TEST(testParsingHaltInstruction);
     RUN_TEST(testExecuteMixedModeInstruction);
     RUN_TEST(testInput);
     RUN_TEST(testOutput);
