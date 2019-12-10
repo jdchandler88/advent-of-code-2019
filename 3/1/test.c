@@ -53,6 +53,26 @@ void testThirdWires() {
     TEST_ASSERT_EQUAL_INT(135, calculateMinIntersectionDistanceFromRouteStrings(route1, route2));
 }
 
+/**
+ * this is my test case. for some reason the app isn't calculating correctly. testing negative intersection points
+ * -R2,U2,L4,D4,R6,U6,L8,D8
+   U6,R3,D9,L10,U3,R6
+
+   This exposed the bug! Accidentally, but did nonetheless. The problem was the intersection detection logic. I was trying 
+   to guard against counting origin (0,0) but the logic was wrong.
+
+   The logic changed from 
+       if (currentRoute2Point->x == currentRoute1Point->x && currentRoute2Point->y == currentRoute1Point->y && currentRoute2Point->x != 0 && currentRoute2Point->y != 0) {
+   to 
+       if (currentRoute2Point->x == currentRoute1Point->x && currentRoute2Point->y == currentRoute1Point->y && !(currentRoute2Point->x == 0 && currentRoute2Point->y == 0) ) {
+   for the fix. Obvious in hindsight, but i was saying if *any* points had '0' (on the axis), then don't count it. YOIKES
+**/
+void testFourthWires() {
+    const char* route1 = "R2,U2,L4,D4,R6,U6,L8,D8";
+    const char* route2 = "U6,R3,D9,L10,U3,R6";
+    TEST_ASSERT_EQUAL_INT(2, calculateMinIntersectionDistanceFromRouteStrings(route1, route2));
+}
+
 void testParseMovements() {
     int size;
     struct Movement** movements = parseMovements("U10,D20,L30,R40", &size);
@@ -72,5 +92,6 @@ int main(void) {
     RUN_TEST(testFirstWires);
     RUN_TEST(testSecondWires);
     RUN_TEST(testThirdWires);
+    RUN_TEST(testFourthWires);
     return UNITY_END();
 }
