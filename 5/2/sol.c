@@ -15,6 +15,8 @@ static void handleAdd(struct Instruction* instruction, int* program, int* progra
     int memParam2 = program[(*programCounter)++];
     int addend2 = instruction->parameter->next->mode == DIRECT ? memParam2 : program[memParam2];
 
+    // int memParam3 = program[(*programCounter)++];
+    // int storeLocation = instruction->parameter->next->next->mode == DIRECT ? memParam3 : program[memParam3];
     int storeLocation = program[(*programCounter)++];
 
     int result = addend1 + addend2;
@@ -48,10 +50,62 @@ static void handleInput(struct Instruction* instruction, int* program, int* prog
 static void handleOutput(struct Instruction* instruction, int* program, int* programCounter) {
     (*programCounter)++;
     //get value to output
-    int outputLocation = program[(*programCounter)++];
-    int output = program[outputLocation];
+    int memParam = program[(*programCounter)++];
+    int output = instruction->parameter->mode == DIRECT ? memParam : program[memParam];
     //write it to somewhere
     programWriter(output);
+}
+
+static void handleJumpIfTrue(struct Instruction* instruction, int* program, int* programCounter) {
+    (*programCounter)++;
+    int memoryElement1 = program[(*programCounter)++];
+    int value1 = instruction->parameter->mode == DIRECT ? memoryElement1 : program[memoryElement1];
+
+    int memoryElement2 = program[(*programCounter)++];
+    int jumpLocation = instruction->parameter->next->mode == DIRECT ? memoryElement2 : program[memoryElement2];
+
+    if (value1==1) {
+        *programCounter = jumpLocation;
+    }
+}
+
+static void handleJumpIfFalse(struct Instruction* instruction, int* program, int* programCounter) {
+    (*programCounter)++;
+    int memoryElement1 = program[(*programCounter)++];
+    int value1 = instruction->parameter->mode == DIRECT ? memoryElement1 : program[memoryElement1];
+
+    int memoryElement2 = program[(*programCounter)++];
+    int jumpLocation = instruction->parameter->next->mode == DIRECT ? memoryElement2 : program[memoryElement2];
+
+    if (value1==0) {
+        *programCounter = jumpLocation;
+    }
+}
+
+static void handleLessThan(struct Instruction* instruction, int* program, int* programCounter) {
+    (*programCounter)++;
+    int memoryElement1 = program[(*programCounter)++];
+    int value1 = instruction->parameter->mode == DIRECT ? memoryElement1 : program[memoryElement1];
+    
+    int memoryElement2 = program[(*programCounter)++];
+    int value2 = instruction->parameter->next->mode == DIRECT ? memoryElement2 : program[memoryElement2];
+
+    int storeLocation = program[(*programCounter)++];
+
+    program[storeLocation] = (value1<value2);
+}
+
+static void handleEquals(struct Instruction* instruction, int* program, int* programCounter) {
+    (*programCounter)++;
+    int memoryElement1 = program[(*programCounter)++];
+    int value1 = instruction->parameter->mode == DIRECT ? memoryElement1 : program[memoryElement1];
+    
+    int memoryElement2 = program[(*programCounter)++];
+    int value2 = instruction->parameter->next->mode == DIRECT ? memoryElement2 : program[memoryElement2];
+    
+    int storeLocation = program[(*programCounter)++];
+    
+    program[storeLocation] = (value1==value2);
 }
 
 static int getNumberOfParams(enum OpCode opcode) {
@@ -64,6 +118,14 @@ static int getNumberOfParams(enum OpCode opcode) {
             return IN_PARAMS;
         case OUT:
             return OUT_PARAMS;
+        case JUMP_IF_TRUE:
+            return JUMP_IF_TRUE_PARAMS;
+        case JUMP_IF_FALSE:
+            return JUMP_IF_FALSE_PARAMS;
+        case LESS_THAN:
+            return LESS_THAN_PARAMS;
+        case EQUALS:
+            return EQUAL_PARAMS;
         case HALT:
             return HALT_PARAMS;
     }
@@ -96,7 +158,6 @@ struct Instruction* parseInstruction(int instructionInt) {
     instruction->parameter = NULL;
 
     //storage for parameter list
-    struct Parameter* params = malloc(sizeof(struct Parameter));
     int numParams = getNumberOfParams(opcode);
     struct Parameter* currentParameter = NULL;
     for (int i=0; i<numParams; i++) {
@@ -107,6 +168,7 @@ struct Instruction* parseInstruction(int instructionInt) {
         //create storage for mode indicator
         struct Parameter* newParameter = malloc(sizeof(struct Parameter));
         newParameter->mode = mode;
+        newParameter->next = NULL;
         //if it's new, initialize instruction with parameter. otherwise, update the linked list
         if (currentParameter == NULL) {
             instruction->parameter = newParameter;
@@ -162,6 +224,18 @@ void executeInstruction(int* program, int* programCounter) {
         case  IN:
             handleInput(instruction, program, programCounter);
             break;
+        case JUMP_IF_TRUE:
+            handleJumpIfTrue(instruction, program, programCounter);
+            break;
+        case JUMP_IF_FALSE:
+            handleJumpIfFalse(instruction, program, programCounter);
+            break;
+        case LESS_THAN:
+            handleLessThan(instruction, program, programCounter);
+            break;
+        case EQUALS:
+            handleEquals(instruction, program, programCounter);
+            break;
         case OUT:
             handleOutput(instruction, program, programCounter);
             break;
@@ -171,6 +245,6 @@ void executeInstruction(int* program, int* programCounter) {
             //what to do here? should probably stick a halt in the program causing a halt.
             //could also exit. 
     }
-    freeLinkedList((void*)instruction->parameter, (void*(*)(void*))nextParameter);
-    free(instruction);
+    //freeLinkedList((void*)instruction->parameter, (void*(*)(void*))nextParameter);
+    //free(instruction);
 }

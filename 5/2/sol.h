@@ -6,6 +6,10 @@ typedef enum OpCode {
   MUL = 2,
   IN = 3,
   OUT = 4,
+  JUMP_IF_TRUE = 5, 
+  JUMP_IF_FALSE = 6, 
+  LESS_THAN = 7,
+  EQUALS = 8,
   HALT = 99
 } OpCode;
 
@@ -30,6 +34,10 @@ const static int ADD_PARAMS = 3;
 const static int MUL_PARAMS = 3;
 const static int IN_PARAMS = 1;
 const static int OUT_PARAMS = 1;
+const static int JUMP_IF_TRUE_PARAMS = 2;
+const static int JUMP_IF_FALSE_PARAMS = 2;
+const static int LESS_THAN_PARAMS = 3;
+const static int EQUAL_PARAMS = 3;
 const static int HALT_PARAMS = 0;
 
 /**
