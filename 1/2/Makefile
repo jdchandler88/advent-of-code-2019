@@ -8,9 +8,9 @@ all : clean exe test
 unity : libunity.a
 
 libunity.a :
-	cmake ../../Unity/src/CmakeLists.txt
-	make ../../Unity/src/Makefile
-
+	cd ../../Unity/src && cmake
+	cd ../../Unity/src && make
+ 
 exe : unity
 	gcc -o exe -I../../utils sol.c ../../utils/utils.c
 

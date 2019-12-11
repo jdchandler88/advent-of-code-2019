@@ -8,8 +8,8 @@ all : clean exe
 unity : libunity.a
 
 libunity.a :
-	cmake ../../Unity/src/CmakeLists.txt
-	make ../../Unity/src/Makefile
-
+	cd ../../Unity/src && cmake
+	cd ../../Unity/src && make
+ 
 exe : unity
 	gcc -o exe -I../../utils -I../1 ../../utils/utils.c ../1/sol.c main.c  
