@@ -164,12 +164,14 @@ void testOutput() {
     take an input value and store it at address 50.
 **/
 void testSimpleIOProgram() {
-    int programSize = 3;
+    int programSize = 5;
     int program[] = {3,0,4,0,99};
+    int expected[] = {4321,0,4,0,99};
+    input = "4321";
     //execute program
-    //need to add 'ouptput writer' that will capture output to wherever we specify
     executeProgram(program, programSize, readInput, writeOutput);
-    TEST_ASSERT_EQUAL_INT(0, 1);
+    TEST_ASSERT_EQUAL_INT(4321, output);
+    TEST_ASSERT_EQUAL_INT_ARRAY(expected, program, programSize);
 }
 
 // not needed when using generate_test_runner.rb
