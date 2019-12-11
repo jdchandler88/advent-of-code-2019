@@ -1,176 +1,140 @@
 #include "sol.h"
 #include "utils.h"
-#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
-InputReader programReader;
-OutputWriter programWriter;
-
-static void handleAdd(struct Instruction* instruction, int* program, int* programCounter) {
-    (*programCounter)++;
-    int memParam1 = program[(*programCounter)++];
-    int addend1 = instruction->parameter->mode == DIRECT ? memParam1 : program[memParam1];
-
-    int memParam2 = program[(*programCounter)++];
-    int addend2 = instruction->parameter->next->mode == DIRECT ? memParam2 : program[memParam2];
-
-    int storeLocation = program[(*programCounter)++];
-
-    int result = addend1 + addend2;
-    program[storeLocation] = result;
-};
-
-static void handleMultiply(struct Instruction* instruction, int* program, int* programCounter) {
-    (*programCounter)++;
-    int memParam1 = program[(*programCounter)++];
-    int addend1 = instruction->parameter->mode == DIRECT ? memParam1 : program[memParam1];
-
-    int memParam2 = program[(*programCounter)++];
-    int addend2 = instruction->parameter->next->mode == DIRECT ? memParam2 : program[memParam2];
-
-    int storeLocation = program[(*programCounter)++];
-
-    int result = addend1 * addend2;
-    program[storeLocation] = result;
-}
-
-static void handleInput(struct Instruction* instruction, int* program, int* programCounter) {
-    (*programCounter)++;
-    //read input from somewhere
-    int storeLocation = program[(*programCounter)++];
-    const char* inputString = programReader();
-    int input = atoi(inputString);
-    //store input at location specified by program
-    program[storeLocation] = input;
-}
-
-static void handleOutput(struct Instruction* instruction, int* program, int* programCounter) {
-    (*programCounter)++;
-    //get value to output
-    int outputLocation = program[(*programCounter)++];
-    int output = program[outputLocation];
-    //write it to somewhere
-    programWriter(output);
-}
-
-static int getNumberOfParams(enum OpCode opcode) {
-    switch (opcode) {
-        case ADD:
-            return ADD_PARAMS; 
-        case MUL:
-            return MUL_PARAMS;
-        case IN:
-            return IN_PARAMS;
-        case OUT:
-            return OUT_PARAMS;
-        case HALT:
-            return HALT_PARAMS;
+const char* sanitizeStringOfNewline(const char* string) {
+    // char* replace_char(char* str, char find, char replace){
+    char* str = (char*)copyString(string);
+    char find = '\n';
+    char replace = '\0';
+    char *current_pos = strchr(str,find);
+    while (current_pos){
+        *current_pos = replace;
+        current_pos = strchr(current_pos,find);
     }
+    return str;
+// }
 }
 
-/**
- *  * ABCDE
-    1002
+struct Planet* searchForPlanet(struct Planet** planets, int numPlanets, const char* name) {
+    for (int i=0; i<numPlanets; i++) {
+        //check planet
+        struct Planet* planet = planets[i];
 
-DE - two-digit opcode,      02 == opcode 2
- C - mode of 1st parameter,  0 == position mode
- B - mode of 2nd parameter,  1 == immediate mode
- A - mode of 3rd parameter,  0 == position mode,
-                                  omitted due to being a leading zero
+        //we won't necessarily have a fully-populated list of planets. short-circuit if we hit the end of the list
+        if (planet == NULL) {
+            return NULL;
+        }
 
-...I deifnitely got lazy. Tired of string parsing in C. No me gusta.
-The algorithm here is: mod by an order of magnitude higher than the information you wnat.
-For instance: i want the 10s/1s place. Mod the int by 100 and that gives me the 10s/1s place.
-For the next slot (100s), mod by the next order of magnitude, 1000. And so it goes...
-*/                                
-struct Instruction* parseInstruction(int instructionInt) {
-    int intMask = 100;
-    int tmp = instructionInt%intMask;
-    int opcode = tmp;
-    instructionInt-=opcode;
-    intMask*=10;    //incrase mask for next base10 place0
-
-    struct Instruction* instruction = malloc(sizeof(struct Instruction));
-    instruction->opcode = opcode;
-    instruction->parameter = NULL;
-
-    //storage for parameter list
-    struct Parameter* params = malloc(sizeof(struct Parameter));
-    int numParams = getNumberOfParams(opcode);
-    struct Parameter* currentParameter = NULL;
-    for (int i=0; i<numParams; i++) {
-        tmp = instructionInt%intMask;
-        int mode = tmp > 0;
-        instructionInt-=tmp;
-        intMask*=10;
-        //create storage for mode indicator
-        struct Parameter* newParameter = malloc(sizeof(struct Parameter));
-        newParameter->mode = mode;
-        //if it's new, initialize instruction with parameter. otherwise, update the linked list
-        if (currentParameter == NULL) {
-            instruction->parameter = newParameter;
-            currentParameter = newParameter;
-        } else {
-            currentParameter->next = newParameter;
-            currentParameter = newParameter;
+        if (strcmp(name, planet->name) == 0) {
+            return planet;
+        }
+        //check planet's children
+        struct Planet* childPlanetMatch = searchForPlanet(planet->children, planet->numChildren, name);
+        if (childPlanetMatch != NULL) {
+            return childPlanetMatch;
         }
     }
-    return instruction;
+    return NULL;
 }
 
-static void printIntArray(int* arr, int size) {
-    for (int i=0; i<size; i++) {
-        if (i==0) {
-            printf("[");
-        }
-        printf("%i", arr[i]);
-        if (i!=size-1) {
-            printf(", ");
-        } else {
-            printf("]");
+int getNextPlanetStorageIndex(struct Planet** planets, int numPlanets) {
+    for (int i=0; i<numPlanets; i++) {
+        if (planets[i] == NULL) {
+            return i;
         }
     }
-    printf("\n");
+    return -1;
 }
 
-void executeProgram(int* program, int programLength, InputReader reader, OutputWriter writer) {
-    //store reader and writer
-    programReader = reader;
-    programWriter = writer;
-    int programCounter = 0;
-    while (program[programCounter] != HALT) {
-        executeInstruction(program, &programCounter);
+struct Planet* createPlanet(const char* name) {
+    struct Planet* planet = malloc(sizeof(struct Planet));
+    planet->name = name;
+    planet->parent = NULL;
+    planet->children = NULL;
+    planet->numChildren = 0;
+    return planet;
+}
+
+void addChildToParent(struct Planet** planets, int numPlanets, struct Planet* parent, const char* childName) {
+    //see if it has already been added to global storage. if not, then create it
+    struct Planet* child = searchForPlanet(planets, numPlanets, childName);
+    if (child == NULL) {
+        child = createPlanet(childName);
     }
-    printf("result = ");
-    printIntArray(program, programLength);
-}
-
-struct Parameter* nextParameter(struct Parameter* currentParameter) {
-    return currentParameter->next;
-}
-
-void executeInstruction(int* program, int* programCounter) {
-    struct Instruction* instruction = parseInstruction(program[*programCounter]);
-    switch (instruction->opcode) {
-        case ADD:
-            handleAdd(instruction, program, programCounter);
-            break;
-        case MUL:
-            handleMultiply(instruction, program, programCounter);
-            break;
-        case  IN:
-            handleInput(instruction, program, programCounter);
-            break;
-        case OUT:
-            handleOutput(instruction, program, programCounter);
-            break;
-        default:
-            printf("undefined OPCODE %i. Quitting...\n", instruction->opcode);
-            exit(1);
-            //what to do here? should probably stick a halt in the program causing a halt.
-            //could also exit. 
+    //initialize child
+    child->parent = parent;
+    parent->numChildren++;
+    if (parent->children == NULL) {
+        parent->children = malloc(sizeof(struct Planet*));
+    } else {
+        parent->children = realloc(parent->children, parent->numChildren*sizeof(struct Planet*));
     }
-    freeLinkedList((void*)instruction->parameter, (void*(*)(void*))nextParameter);
-    free(instruction);
+    parent->children[parent->numChildren-1] = child;
+}
+
+void printAllPlanets(struct Planet* root, int* indentLevel) {
+    for (int i=0; i<*indentLevel; i++) {
+        printf(" ");
+    }
+    printf("planet = %s, numChildren = %i\n", root->name, root->numChildren);
+    (*indentLevel)++;
+    for (int i=0; i<root->numChildren; i++) {
+        printAllPlanets(root->children[i], indentLevel);
+    }
+    (*indentLevel)--;
+}
+
+void countAllOrbits(struct Planet* root, int* count, int* sum) {
+    for (int i=0; i<root->numChildren; i++) {
+        (*count)++;
+        (*sum)=*sum+*count;
+        countAllOrbits(root->children[i], count, sum);
+        (*count)--;
+    }
+}
+
+int countOrbits(const char** mappings, int numMappings) {
+    //create storage for all planets. We'll reorganize after they're all created. initialize to NULL
+    struct Planet** planets = malloc(numMappings*sizeof(struct Planet));
+    for (int i=0; i<numMappings; i++) {
+        planets[i] = NULL;
+    }
+
+    //start mapping the orbits
+    for (int i=0; i<numMappings; i++) {
+        //parse the mappings
+        const char* mapping = mappings[i];
+        int numTokens;
+        //planets[0] = parent
+        //planets[1] = child
+        const char** planetsStrings = parseString(mapping, ")", &numTokens);
+        const char* parentName = planetsStrings[0];
+        const char* childName = sanitizeStringOfNewline(planetsStrings[1]);
+
+        //check to see if parent exists.
+        struct Planet* parent = searchForPlanet(planets, numMappings, parentName);
+        if (parent == NULL) {
+            parent = createPlanet(parentName);
+            //add parent to storage
+            int planetStorageIndex = getNextPlanetStorageIndex(planets, numMappings);
+            planets[planetStorageIndex] = parent;
+        }
+        addChildToParent(planets, numMappings, parent, childName);
+    }
+
+    struct Planet* com = searchForPlanet(planets, numMappings, "COM");
+    // debugging: can see the structure of the planet tree, starting with COM
+    // int indentLevel = 0;
+    // printAllPlanets(com, &indentLevel);
+
+    //meh, got lazy. the tree structure should be there even though we have nodes stored in an array. what i mean is
+    //we have mapped all children to their parent. therefore, if we find "COM", then we should be able to traverse the 
+    //entire tree and solve the problem
+    int nodeCounter = 0;
+    int orbitSum = 0;
+    countAllOrbits(com, &nodeCounter, &orbitSum);
+    printf("numNodes=%i, numOrbits=%i\n", nodeCounter, orbitSum);
+    return orbitSum;
 }

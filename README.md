@@ -4,6 +4,9 @@ This repository is a collection of solutions to the advent-of-code 2019 puzzles.
 Each solution is in a directory ./{day}/{part}. For example, for day2, part2, you'll
 find that code in ./2/2
 
+Note that I used VSCode as the IDE so there is a config file to help with include paths 
+stored in this code repo.
+
 # Get started
 
 1. Make sure `git` and `cmake` are installed
