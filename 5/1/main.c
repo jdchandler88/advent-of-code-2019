@@ -3,8 +3,19 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-static InputReader reader;
-static OutputWriter writer;
+
+const char* readInput() {
+    printf("Please enter your input...\n");
+    char * line = NULL;
+    size_t len = 0;
+    size_t read;
+    getline(&line, &len, stdin);
+    return line;
+}
+
+void writeOutput(int output) {
+    printf("This is the program output: %i\n", output);
+}
 
 static void programStringCallback(const char* programString) {
     //parse the program
@@ -18,7 +29,7 @@ static void programStringCallback(const char* programString) {
     }
     free((void*)parsedProgram);
     //do the program
-    executeProgram(program, programSize, reader, writer);
+    executeProgram(program, programSize, readInput, writeOutput);
     //free the program storage
     free((void*)program);
 }
