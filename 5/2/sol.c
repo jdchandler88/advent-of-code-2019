@@ -64,7 +64,7 @@ static void handleJumpIfTrue(struct Instruction* instruction, int* program, int*
     int memoryElement2 = program[(*programCounter)++];
     int jumpLocation = instruction->parameter->next->mode == DIRECT ? memoryElement2 : program[memoryElement2];
 
-    if (value1==1) {
+    if (value1!=0) {
         *programCounter = jumpLocation;
     }
 }
@@ -213,6 +213,7 @@ struct Parameter* nextParameter(struct Parameter* currentParameter) {
 }
 
 void executeInstruction(int* program, int* programCounter) {
+    int pc = *programCounter;
     struct Instruction* instruction = parseInstruction(program[*programCounter]);
     switch (instruction->opcode) {
         case ADD:
