@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdbool.h>
 
 InputReader programReader;
 OutputWriter programWriter;
@@ -254,6 +255,63 @@ void decodeAmplifiers(int* program, int programlength, InputReader reader, Outpu
 
 }
 
-void chainProgram(int numChains, const char** inputs, int* program, int ProgramLength, InputReader reader, OutputWriter writer) {
-    
+static void copyProgram(int* storageLocation, int* program, int programLength) {
+   memcpy(storageLocation, program, programLength * sizeof(int));
+}
+
+
+
+static int chainOutput;
+/**
+ * This output writer stores the output for intermediate programs. This output is then
+ * used by the reader below. This is the mechanism for passing output between programs.
+ */ 
+static void writeOutputForChain(int output) {
+    printf("outputting: %i\n", output);
+    chainOutput = output;
+}
+
+static const char* inputForChain;
+static char* signalString;
+bool phaseNotSignal = true;
+/**
+ * this reader toggles between reading input from "user" and from "output". This makes this program automatable.
+ * The first thing to read is the phase [0,4]. The second thing to read is amplifier signal. Then the next program 
+ * needs to do the same thing. And so on. This is the mechanism for passing output between programs.
+ */ 
+static const char* readInputForChain() {
+    if (phaseNotSignal) {
+        printf("readingPhase: %s\n", inputForChain);
+        phaseNotSignal = !phaseNotSignal;
+        return inputForChain;
+    } else {
+        printf("readingSignal: %i\n", chainOutput);
+        sprintf(signalString, "%i", chainOutput);
+        phaseNotSignal = !phaseNotSignal;
+        return signalString;
+    }
+}
+
+/**
+ * This function chains programs together. Specifically, output from one is fed to input for two, etc.
+ */ 
+void chainProgram(int numChains, const char** inputs, int* program, int programLength, InputReader reader, OutputWriter writer) {
+    //intialize 'global' storage for these programs
+    int* programCopyStorage = malloc(programLength*sizeof(int));
+    signalString = malloc(100*sizeof(char));
+
+    //run the program 'numChains' times
+    chainOutput = 0;    //use the same mechanism for the first program as for the last. initialize to 0 for the first signal input.
+
+    for (int i=0; i<numChains; i++) {
+        inputForChain = inputs[i];
+        copyProgram(programCopyStorage, program, programLength);
+        executeProgram(programCopyStorage, programLength, readInputForChain, writeOutputForChain);
+    }
+
+    //not sure what this buys us, but let's call the callback for writing output. (tests at least...)
+    writer(chainOutput);
+
+    printf("final output = %i\n", chainOutput);
+    free((void*)programCopyStorage);
 }
