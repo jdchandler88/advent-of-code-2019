@@ -364,6 +364,15 @@ void testSequence10432ShouldReturn65210() {
     TEST_ASSERT_EQUAL_INT(65210, output);
 }
 
+void testWeActuallyGet65210AsMaxOutput() {
+    int programSize = 34;
+    int program[] = {3,31,3,32,1002,32,10,32,1001,31,-2,31,1007,31,0,33,
+    1002,33,7,33,1,33,31,31,1,32,31,31,4,31,99,0,0,0};
+    const char* inputs[] = {"1", "0", "4", "3", "2"};
+    int result = decodeAmplifiers(5, program, programSize, readInput, writeOutput);
+    TEST_ASSERT_EQUAL_INT(65210, result);
+}
+
 // not needed when using generate_test_runner.rb
 int main(void) {
     UNITY_BEGIN();
@@ -396,5 +405,6 @@ int main(void) {
     RUN_TEST(testSequence43210ShouldReturn43210);
     RUN_TEST(testSequence01234ShouldReturn54321);
     RUN_TEST(testSequence10432ShouldReturn65210);
+    RUN_TEST(testWeActuallyGet65210AsMaxOutput);
     return UNITY_END();
 }

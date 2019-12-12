@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+int numAmps;
 
 const char* readInput() {
     printf("Please enter your input...\n");
@@ -29,16 +30,19 @@ static void programStringCallback(const char* programString) {
     }
     free((void*)parsedProgram);
     //do the program
-    executeProgram(program, programSize, readInput, writeOutput);
+    
+    decodeAmplifiers(numAmps, program, programSize, readInput, writeOutput);
     //free the program storage
     free((void*)program);
 }
 
 int main(int argc, char** argv) {
-    if (argc <= 1) {
+    if (argc !=3) {
+        printf("gimme an input file and the number of amplifiers we're decoding. For example './exe input.txt 5'\n");
         exit(0);
     }
     FILE* file = fopen(argv[1], "r");
+    numAmps = atoi(argv[2]);
     readLines(file, programStringCallback);
     fclose(file);
 }

@@ -251,15 +251,14 @@ void executeInstruction(int* program, int* programCounter) {
     //free(instruction);
 }
 
-void decodeAmplifiers(int* program, int programlength, InputReader reader, OutputWriter writer) {
 
-}
-
+/**
+ * BEGIN CODE FOR DAY 7 PART 1
+ **/ 
+ 
 static void copyProgram(int* storageLocation, int* program, int programLength) {
    memcpy(storageLocation, program, programLength * sizeof(int));
 }
-
-
 
 static int chainOutput;
 /**
@@ -285,8 +284,8 @@ static const char* readInputForChain() {
         phaseNotSignal = !phaseNotSignal;
         return inputForChain;
     } else {
-        printf("readingSignal: %i\n", chainOutput);
         sprintf(signalString, "%i", chainOutput);
+        printf("readingSignal: int=%i, str=%s\n", chainOutput, signalString);
         phaseNotSignal = !phaseNotSignal;
         return signalString;
     }
@@ -295,23 +294,102 @@ static const char* readInputForChain() {
 /**
  * This function chains programs together. Specifically, output from one is fed to input for two, etc.
  */ 
-void chainProgram(int numChains, const char** inputs, int* program, int programLength, InputReader reader, OutputWriter writer) {
+int chainProgram(int numChains, const char** inputs, int* program, int programLength, InputReader reader, OutputWriter writer) {
     //intialize 'global' storage for these programs
     int* programCopyStorage = malloc(programLength*sizeof(int));
     signalString = malloc(100*sizeof(char));
 
-    //run the program 'numChains' times
     chainOutput = 0;    //use the same mechanism for the first program as for the last. initialize to 0 for the first signal input.
-
+    //run the program 'numChains' times
     for (int i=0; i<numChains; i++) {
         inputForChain = inputs[i];
         copyProgram(programCopyStorage, program, programLength);
         executeProgram(programCopyStorage, programLength, readInputForChain, writeOutputForChain);
     }
 
-    //not sure what this buys us, but let's call the callback for writing output. (tests at least...)
+    //output the last output in the chain.
     writer(chainOutput);
 
     printf("final output = %i\n", chainOutput);
     free((void*)programCopyStorage);
+
+    return chainOutput;
+}
+
+int decodeAmplifiers(int numAmplifiers, int* program, int programlength, InputReader reader, OutputWriter writer) {
+
+    //will do this dynamically. just in case there are a different number of amplifiers in the future. also, i want to 
+    //fiure out how to do this generically.
+    int* permutationArray = malloc(numAmplifiers*sizeof(int));
+    for (int i=0; i<numAmplifiers; i++) {
+        permutationArray[i] = 0;
+    }
+
+    //elements in this array tell us when to toggle which elements in the array.
+    //the algorithm is as follows: use the % operator for each element in the array. when the result is 0, that element needs
+    //to be reset. **!!when that element is reset, the next index should be incremented.
+    int* toggleThresholdArray = malloc(numAmplifiers*sizeof(int));
+    int accumulator = numAmplifiers;
+    int iterationCount = 1;
+    for (int i=0; i<numAmplifiers; i++) {
+        toggleThresholdArray[i]  = accumulator;
+        accumulator*=numAmplifiers;
+        iterationCount*=numAmplifiers;
+    }    
+
+    //just goingto hard-code a decent size for the storage of input strings.
+    char** inputs = malloc(numAmplifiers*sizeof(char*));
+    for (int i=0; i<numAmplifiers; i++) {
+        char* input = malloc(100*sizeof(char));
+        inputs[i] = input;
+    }
+
+    //the accumulator now holds the number of iterations we need to make to test all unique combinations
+    int counter = 0;
+    int maxSignal = -1;
+    while (counter < iterationCount) {
+        //generate input strings for program. NOTE: NO INPUT IS ALLOWED TO REPEAT. LET'S CHECK THAT HERE
+        bool inputsMatch = false;
+        for (int i=0; i<numAmplifiers; i++) {
+            for (int j=0; j<numAmplifiers; j++) {
+                int pi = permutationArray[i];
+                int pj = permutationArray[j];
+                if (i!=j && pi==pj) {
+                    inputsMatch = true;
+                }
+            }
+            sprintf(inputs[i], "%i", permutationArray[i]);
+        }
+        
+        //don't do anything 
+        if (!inputsMatch) {
+            //run program
+            int signal = chainProgram(numAmplifiers, (const char**)inputs, program, programlength, reader, writer);
+            if (signal > maxSignal) {
+                maxSignal = signal;
+            }
+        }
+    
+        counter++;
+
+        //always increment least significant digit
+        permutationArray[0]++;
+
+        //increment permutations
+        for (int i=0; i<numAmplifiers; i++) {
+            int mod = toggleThresholdArray[i];
+            if (counter%mod == 0 ) {
+                //reset
+                permutationArray[i] = 0;
+                //next index needs to increment
+                if (i<numAmplifiers-1) {
+                    permutationArray[i+1]++;
+                }
+            }
+        }
+
+    }
+    printf("max signal = %i\n", maxSignal);
+    return maxSignal;
+
 }

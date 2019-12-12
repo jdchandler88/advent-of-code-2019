@@ -50,9 +50,9 @@ typedef struct Instruction {
 
 struct Instruction* parseInstruction(int instructionString);
 
-void decodeAmplifiers(int* program, int programlength, InputReader reader, OutputWriter writer);
+int decodeAmplifiers(int numAmplifiers, int* program, int programlength, InputReader reader, OutputWriter writer);
 
-void chainProgram(int numChains, const char** inputs, int* program, int ProgramLength, InputReader reader, OutputWriter writer);
+int chainProgram(int numChains, const char** inputs, int* program, int ProgramLength, InputReader reader, OutputWriter writer);
 
 void executeProgram(int* program, int programLength, InputReader reader, OutputWriter writer);
 
