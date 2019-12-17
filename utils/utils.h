@@ -27,3 +27,17 @@ void freeArray(void** array, int numElements);
  * element in the linked list.
  **/
 void freeLinkedList(void* node, void* (*next)(void*));
+
+typedef struct Queue Queue;
+
+struct Queue* createQueue();
+
+void destroyQueue(struct Queue* queue);
+
+void pushQueue(struct Queue* queue, int value);
+
+int popQueue(struct Queue* queue);
+
+int sizeQueue(struct Queue* queue);
+
+static int increaseQueueSize(struct Queue* queue, int growthSize);

@@ -74,3 +74,55 @@ void freeLinkedList(void* node, void* (*next)(void*)) {
         currentNode = next(currentNode);
     }
 }
+
+struct Queue {
+  int id;
+  int* queue;
+  int numQueued;
+  int maxQueueSize;
+};
+
+static const int QUEUE_GROWTH_SIZE=10;
+static int idCounter = 0;
+
+struct Queue* createQueue() {
+    struct Queue* queue = malloc(sizeof(struct Queue));
+    queue->id = idCounter++;
+    queue->numQueued = 0;
+    queue->maxQueueSize = QUEUE_GROWTH_SIZE;
+    queue->queue = malloc(queue->maxQueueSize*sizeof(int));
+    return queue;    
+}
+
+void destroyQueue(struct Queue* queue) {
+    free(queue->queue);
+    free(queue);
+}
+
+void pushQueue(struct Queue* queue, int value) {
+    //is there enough room? if so, add it. if not, reize it
+    if (queue->maxQueueSize == queue->numQueued) {
+        increaseQueueSize(queue, QUEUE_GROWTH_SIZE);
+    }
+    queue->queue[queue->numQueued] = value;
+    queue->numQueued++;
+}
+
+int popQueue(struct Queue* queue) {
+    //is there anything in the queue? if so, then get it. if not, then suspend until there is something available.
+    if (queue->numQueued == 0) {
+        //wait
+    } else {
+        queue->numQueued--;
+        return queue->queue[queue->numQueued];
+    }
+}
+
+int sizeQueue(struct Queue* queue) {
+    return queue->numQueued;
+}
+
+static int increaseQueueSize(struct Queue* queue, int growthSize) {
+    queue->maxQueueSize+=growthSize;
+    queue->queue = realloc(queue->queue, queue->maxQueueSize*sizeof(int));
+}

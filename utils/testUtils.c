@@ -72,6 +72,43 @@ void parseParsesSpacesAndCommas() {
     TEST_ASSERT_EQUAL_INT(num, 5);
 }
 
+void queueSizeShouldBeZeroAfterCreation() {
+    struct Queue* queue = createQueue();
+    TEST_ASSERT_EQUAL_INT(0, sizeQueue(queue));
+    destroyQueue(queue);
+}
+
+void queueSizeShouldBeOneAfterOneInsertion() {
+    struct Queue* queue = createQueue();
+    pushQueue(queue, 1);
+    TEST_ASSERT_EQUAL_INT(1, sizeQueue(queue));
+    destroyQueue(queue);
+}
+
+void queueValueShouldBeOneAfterOneAdd() {
+    struct Queue* queue = createQueue();
+    pushQueue(queue, 1);
+    TEST_ASSERT_EQUAL_INT(1, popQueue(queue));
+    destroyQueue(queue);
+}
+
+void queueShouldBehaveAppropriatelyDuringManyAdds() {
+    int numTests = 1000;
+    struct Queue* queue = createQueue();
+    for (int i=0; i<numTests; i++) {
+        pushQueue(queue, i);
+        TEST_ASSERT_EQUAL_INT(i+1, sizeQueue(queue));
+    }
+
+    TEST_ASSERT_EQUAL_INT(numTests, sizeQueue(queue));
+
+    for (int i=numTests-1; i>=0; i--) {
+        int value = popQueue(queue);
+        TEST_ASSERT_EQUAL_INT(i, value);
+        TEST_ASSERT_EQUAL_INT(i, sizeQueue(queue));
+    }
+}
+
 // not needed when using generate_test_runner.rb
 int main(void) {
     UNITY_BEGIN();
@@ -82,5 +119,10 @@ int main(void) {
     RUN_TEST(parseParsesSpaces);
     RUN_TEST(parseParsesCommas);
     RUN_TEST(parseParsesSpacesAndCommas);
+
+    RUN_TEST(queueSizeShouldBeZeroAfterCreation);
+    RUN_TEST(queueSizeShouldBeOneAfterOneInsertion);
+    RUN_TEST(queueValueShouldBeOneAfterOneAdd);
+    RUN_TEST(queueShouldBehaveAppropriatelyDuringManyAdds);
     return UNITY_END();
 }
