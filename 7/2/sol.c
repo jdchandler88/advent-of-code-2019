@@ -307,17 +307,17 @@ typedef struct QueueContext {
 //also, if there is no input available, then the current thread waits until it's signaled that there is input available
 const char* readQueue(void* context) {
     struct QueueContext* ctx = (QueueContext*)context;
-    //lock on this queue
-    pthread_mutex_lock(ctx->mutex);
     //wait for input data if there isn't any
     if (sizeQueue(ctx->queue) == 0) {
         pthread_cond_wait(ctx->waitCondition, ctx->mutex);
     } else {
         char* input = malloc(100*sizeof(char));
+        //lock on this queue
+        pthread_mutex_lock(ctx->mutex);
         sprintf(input, "%i", popQueue(ctx->queue));
+        pthread_mutex_unlock(ctx->mutex);
         return input;
     }
-    pthread_mutex_unlock(ctx->mutex);
 }
 
 //writes to queue in thread-safe manner.
@@ -329,20 +329,15 @@ void writeQueue(int output, void* context) {
     //put data in queue and notify wait condition just in case other threads are waiting for input
     pushQueue(ctx->queue, output);
     pthread_cond_signal(ctx->waitCondition);
+    pthread_mutex_unlock(ctx->mutex);
 }
-
-// const char* intToString(int i) {
-//     const char* string = malloc(100*sizeof(char));
-//     sprintf(string, "%i", i);
-//     return string;
-// }
 
 /**
  * This function chains programs together. Specifically, output from one is fed to input for two, etc.
  */ 
 int chainProgram(int numChains, const char** inputs, int* program, int programLength, InputReader* reader, OutputWriter* writer) {
-        // signalString = malloc(100*sizeof(char));
-        // chainOutput = 0;    //use the same mechanism for the first program as for the last. initialize to 0 for the first signal input.
+    bool sequentialNotParallel = true;  //if true, then execute programs sequentially. otherwise, execute them in parallel
+
     //queues for communication between units
     struct QueueContext** ctxs = malloc(numChains*sizeof(QueueContext*));
     for (int i=0; i<numChains; i++) {
@@ -350,6 +345,8 @@ int chainProgram(int numChains, const char** inputs, int* program, int programLe
         ctx->queue = createQueue();
         ctx->mutex = malloc(sizeof(pthread_mutex_t));
         ctx->waitCondition = malloc(sizeof(pthread_cond_t));
+        pthread_mutex_init(ctx->mutex, NULL);
+        pthread_cond_init(ctx->waitCondition, NULL);
         ctxs[i] = ctx;
 
         //initialize inputs for each component. each component reads input from the previous, so set the queues up that way
@@ -363,8 +360,12 @@ int chainProgram(int numChains, const char** inputs, int* program, int programLe
     }           
 
     //if chaining programs sequentially, we need to initialize input for the first unit
-    struct QueueContext* firstContext = ctxs[numChains-1];
-    pushQueue(firstContext->queue, 0);
+    if (sequentialNotParallel) {
+        struct QueueContext* firstContext = ctxs[numChains-1];
+        pushQueue(firstContext->queue, 0);
+    }
+
+    pthread_t threads[numChains];
 
     //there are #units queues
     for (int i=0; i<numChains; i++) {
@@ -384,9 +385,12 @@ int chainProgram(int numChains, const char** inputs, int* program, int programLe
         programContext->writer->writerContext= ctxs[i];    //always write to the queue ot which the unit is assigned (the one in front of the unit);
         
         //execute program in another thread
-        executeProgram(programContext);
+        pthread_create(&threads[i], NULL, (void* (*)(void*))executeProgram, programContext);
 
         //if sequential, then join each individual thread here (each component will complete prior to the proceeding component)
+        if (sequentialNotParallel) {
+            pthread_join(threads[i], NULL);
+        }
     }
 
     //if parallel, join all threads now

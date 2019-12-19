@@ -12,7 +12,7 @@ libunity.a :
 	cd ../../Unity/src && make
  
 exe : unity
-	gcc -o exe -I../../utils -I. ../../utils/utils.c sol.c main.c  
+	gcc -pthread -o exe -I../../utils -I. ../../utils/utils.c sol.c main.c  
 
 test : unity test.c
-	gcc -o test -I../../Unity/src -I../../utils sol.c test.c ../../utils/utils.c  -L../../Unity/src -lunity -DTEST 
+	gcc -pthread -o test -I../../Unity/src -I../../utils sol.c test.c ../../utils/utils.c  -L../../Unity/src -lunity -DTEST 
