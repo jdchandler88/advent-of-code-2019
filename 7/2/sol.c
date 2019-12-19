@@ -1,5 +1,6 @@
 #include "sol.h"
 #include "utils.h"
+#include <pthread.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -198,16 +199,16 @@ static void printIntArray(int* arr, int size) {
     printf("\n");
 }
 
-void executeProgram(int* program, int programLength, InputReader* reader, OutputWriter* writer) {
+void executeProgram(struct ProgramContext* context) {
     //store reader and writer
-    programReader = reader;
-    programWriter = writer;
+    programReader = context->reader;
+    programWriter = context->writer;
     int programCounter = 0;
-    while (program[programCounter] != HALT) {
-        executeInstruction(program, &programCounter);
+    while (context->program[programCounter] != HALT) {
+        executeInstruction(context->program, &programCounter);
     }
     printf("result = ");
-    printIntArray(program, programLength);
+    printIntArray(context->program, context->programLength);
 }
 
 struct Parameter* nextParameter(struct Parameter* currentParameter) {
@@ -296,68 +297,116 @@ static const char* readInputForChain() {
     }
 }
 
-typedef struct ProgramThread {
-    int* program;
-    struct Queue* input;
-    struct Queue* output;
-} ProgramThread;
 
-//reader should be a struct that takes in a 
+
+typedef struct QueueContext {
+    struct Queue* queue;
+    pthread_cond_t* waitCondition;
+    pthread_mutex_t* mutex;
+} QueueContext;
+
+//reads from a queue in a thread-safe manner. 
+//also, if there is no input available, then the current thread waits until it's signaled that there is input available
+const char* readQueue(void* context) {
+    struct QueueContext* ctx = (QueueContext*)context;
+    //lock on this queue
+    pthread_mutex_lock(ctx->mutex);
+    //wait for input data if there isn't any
+    if (sizeQueue(ctx->queue) == 0) {
+        pthread_cond_wait(ctx->waitCondition, ctx->mutex);
+    } else {
+        char* input = malloc(100*sizeof(char));
+        sprintf(input, "%i", popQueue(ctx->queue));
+        return input;
+    }
+    pthread_mutex_unlock(ctx->mutex);
+}
+
+//writes to queue in thread-safe manner.
+//this also notifies a wait condition in case another thread is waiting
+void writeQueue(int output, void* context) {
+    struct QueueContext* ctx = (QueueContext*)context;
+    //lock on this queue
+    pthread_mutex_lock(ctx->mutex);
+    //put data in queue and notify wait condition just in case other threads are waiting for input
+    pushQueue(ctx->queue, output);
+    pthread_cond_signal(ctx->waitCondition);
+}
 
 /**
  * This function chains programs together. Specifically, output from one is fed to input for two, etc.
  */ 
 int chainProgram(int numChains, const char** inputs, int* program, int programLength, InputReader* reader, OutputWriter* writer) {
-
-    // //ideal reader
-    // //read from *somewhere*
-    //     //reader()
-    //         //from the other thread, this needs to access the queue. the programthread needs a pointer to teh queue
-    //         //getFromQueue (need input queue)
-                
-
-    // //for each unit
-    //     //make a copy of the progrma
-    //     //spawn a thread for it
-    //         //for each thread
-    //             //input reader that reads from an input queue
-    //             //output writer that writes to an output queue
-    //     //join threads back to main
-
-    // int** programCopies = malloc(numChains*sizeof(int*));
-    // for (int i=0; i<numChains; i++) {
-    //     //make copy of program
-    //     int* programCopy = malloc(programLength*sizeof(int));
-    //     programCopies[i] = programCopy;
-
-    //     // 
-    // }
-
-    InputReader chainReader;
-    chainReader.reader = readInputForChain;
-    chainReader.readerContext = NULL;
-
-    OutputWriter chainWriter;
-    chainWriter.writer = writeOutputForChain;
-    chainWriter.writerContext = NULL;
-
-    //intialize 'global' storage for these programs
-    int* programCopyStorage = malloc(programLength*sizeof(int));
-    signalString = malloc(100*sizeof(char));
-
-    chainOutput = 0;    //use the same mechanism for the first program as for the last. initialize to 0 for the first signal input.
-    //run the program 'numChains' times
+    printf("creating queues.\n");
+        signalString = malloc(100*sizeof(char));
+        chainOutput = 0;    //use the same mechanism for the first program as for the last. initialize to 0 for the first signal input.
+    //queues for communication between units
+    struct QueueContext** ctxs = malloc(numChains*sizeof(QueueContext*));
     for (int i=0; i<numChains; i++) {
+        struct QueueContext* ctx = malloc(sizeof(QueueContext));
+        ctx->queue = createQueue();
+        ctx->mutex = malloc(sizeof(pthread_mutex_t));
+        ctx->waitCondition = malloc(sizeof(pthread_cond_t));
+    }           
+
+    //for each unit
+        //make a copy of the progrma
+        //spawn a thread for it
+            //for each thread
+                //input reader that reads from an input queue
+                //output writer that writes to an output queue
+        //join threads back to main
+
+    //there are #units queues
+    printf("done creating queues. chaining programs.\n");
+    for (int i=0; i<numChains; i++) {
+
         inputForChain = inputs[i];
-        copyProgram(programCopyStorage, program, programLength);
-        executeProgram(programCopyStorage, programLength, &chainReader, &chainWriter);
+        printf("creating program context\n");
+        //create program context
+        struct ProgramContext* programContext = malloc(sizeof(ProgramContext));
+
+        //make copy of program and store in context
+        printf("copying program\n");
+        int* programCopy = malloc(programLength*sizeof(int));
+        copyProgram(programCopy, program, programLength);
+        programContext->program = programCopy;
+        programContext->programLength = programLength;
+        printf("copied program and stored in context\n");
+
+        programContext->reader = malloc(sizeof(InputReader));
+        programContext->reader->reader = readInputForChain;
+        programContext->reader->readerContext = NULL;
+        programContext->writer = malloc(sizeof(OutputWriter));
+        programContext->writer->writer = writeOutputForChain;
+        programContext->writer->writerContext= NULL;
+
+        //intialize 'global' storage for these programs
+        int* programCopyStorage = malloc(programLength*sizeof(int));
+
+        
+
+        // //readers and writers
+        // struct InputReader* reader = malloc(sizeof(InputReader));
+        // reader->reader = readQueue;
+        // reader->readerContext = (i==0) ? ctxs[numChains-1] : ctxs[i-1]; //if this is the first unit, read from *the last queue*; this is the queue to which the last unit writes. otherwise, read from the one previous
+
+        // struct OutputWriter* writer = malloc(sizeof(OutputWriter));
+        // writer->writer = writeQueue;
+        // writer->writerContext = ctxs[i];    //always write to the queue ot which the unit is assigned (the one in front of the unit)
+
+        printf("executing program\n");
+        //execute program
+        executeProgram(programContext);
     }
+
+    
 
     //output the last output in the chain.
     writer->writer(chainOutput, writer->writerContext);
 
     printf("final output = %i\n", chainOutput);
-    free((void*)programCopyStorage);
+    // free((void*)programCopyStorage);
 
     return chainOutput;
 }
