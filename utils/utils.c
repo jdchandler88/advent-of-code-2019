@@ -114,7 +114,12 @@ int popQueue(struct Queue* queue) {
         //wait
     } else {
         queue->numQueued--;
-        return queue->queue[queue->numQueued];
+        int value=queue->queue[0];
+        //shift values up (a more sophisticated implementation would use a circular pointer or something...)
+        for (int i=0; i<queue->numQueued; i++) {
+            queue->queue[i] = queue->queue[i+1];
+        }
+        return value;
     }
 }
 

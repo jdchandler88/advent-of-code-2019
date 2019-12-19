@@ -102,10 +102,10 @@ void queueShouldBehaveAppropriatelyDuringManyAdds() {
 
     TEST_ASSERT_EQUAL_INT(numTests, sizeQueue(queue));
 
-    for (int i=numTests-1; i>=0; i--) {
+    for (int i=0; i<numTests; i++) {
         int value = popQueue(queue);
         TEST_ASSERT_EQUAL_INT(i, value);
-        TEST_ASSERT_EQUAL_INT(i, sizeQueue(queue));
+        TEST_ASSERT_EQUAL_INT(numTests-i-1, sizeQueue(queue));
     }
 }
 
