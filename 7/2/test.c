@@ -377,7 +377,6 @@ void testProgramOutputs1001IfInputGreaterThan8() {
 //run 
 
 void testSequence43210ShouldReturn43210() {
-    printf("DIIIICKS\n");
     int programSize = 17;
     int program[] = {3,15,3,16,1002,16,10,16,1,16,15,15,4,15,99,0,0};
     const char* inputs[] = {"4", "3", "2", "1", "0"};

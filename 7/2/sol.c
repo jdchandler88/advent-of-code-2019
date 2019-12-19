@@ -297,8 +297,6 @@ static const char* readInputForChain() {
     }
 }
 
-
-
 typedef struct QueueContext {
     struct Queue* queue;
     pthread_cond_t* waitCondition;
@@ -333,13 +331,18 @@ void writeQueue(int output, void* context) {
     pthread_cond_signal(ctx->waitCondition);
 }
 
+// const char* intToString(int i) {
+//     const char* string = malloc(100*sizeof(char));
+//     sprintf(string, "%i", i);
+//     return string;
+// }
+
 /**
  * This function chains programs together. Specifically, output from one is fed to input for two, etc.
  */ 
 int chainProgram(int numChains, const char** inputs, int* program, int programLength, InputReader* reader, OutputWriter* writer) {
-    printf("creating queues.\n");
-        signalString = malloc(100*sizeof(char));
-        chainOutput = 0;    //use the same mechanism for the first program as for the last. initialize to 0 for the first signal input.
+        // signalString = malloc(100*sizeof(char));
+        // chainOutput = 0;    //use the same mechanism for the first program as for the last. initialize to 0 for the first signal input.
     //queues for communication between units
     struct QueueContext** ctxs = malloc(numChains*sizeof(QueueContext*));
     for (int i=0; i<numChains; i++) {
@@ -347,68 +350,58 @@ int chainProgram(int numChains, const char** inputs, int* program, int programLe
         ctx->queue = createQueue();
         ctx->mutex = malloc(sizeof(pthread_mutex_t));
         ctx->waitCondition = malloc(sizeof(pthread_cond_t));
+        ctxs[i] = ctx;
+
+        //initialize inputs for each component. each component reads input from the previous, so set the queues up that way
+        int inputIdx;;
+        if (i==numChains-1) {
+            inputIdx = 0;
+        } else {
+            inputIdx = i+1;
+        }
+        pushQueue(ctx->queue, atoi(inputs[inputIdx]));
     }           
 
-    //for each unit
-        //make a copy of the progrma
-        //spawn a thread for it
-            //for each thread
-                //input reader that reads from an input queue
-                //output writer that writes to an output queue
-        //join threads back to main
+    //if chaining programs sequentially, we need to initialize input for the first unit
+    struct QueueContext* firstContext = ctxs[numChains-1];
+    pushQueue(firstContext->queue, 0);
 
     //there are #units queues
-    printf("done creating queues. chaining programs.\n");
     for (int i=0; i<numChains; i++) {
-
-        inputForChain = inputs[i];
-        printf("creating program context\n");
         //create program context
         struct ProgramContext* programContext = malloc(sizeof(ProgramContext));
 
         //make copy of program and store in context
-        printf("copying program\n");
         int* programCopy = malloc(programLength*sizeof(int));
         copyProgram(programCopy, program, programLength);
         programContext->program = programCopy;
         programContext->programLength = programLength;
-        printf("copied program and stored in context\n");
-
         programContext->reader = malloc(sizeof(InputReader));
-        programContext->reader->reader = readInputForChain;
-        programContext->reader->readerContext = NULL;
+        programContext->reader->reader = readQueue;
+        programContext->reader->readerContext = (i==0) ? ctxs[numChains-1] : ctxs[i-1]; //if this is the first unit, read from *the last queue*; this is the queue to which the last unit writes. otherwise, read from the one previous
         programContext->writer = malloc(sizeof(OutputWriter));
-        programContext->writer->writer = writeOutputForChain;
-        programContext->writer->writerContext= NULL;
-
-        //intialize 'global' storage for these programs
-        int* programCopyStorage = malloc(programLength*sizeof(int));
-
+        programContext->writer->writer = writeQueue;
+        programContext->writer->writerContext= ctxs[i];    //always write to the queue ot which the unit is assigned (the one in front of the unit);
         
-
-        // //readers and writers
-        // struct InputReader* reader = malloc(sizeof(InputReader));
-        // reader->reader = readQueue;
-        // reader->readerContext = (i==0) ? ctxs[numChains-1] : ctxs[i-1]; //if this is the first unit, read from *the last queue*; this is the queue to which the last unit writes. otherwise, read from the one previous
-
-        // struct OutputWriter* writer = malloc(sizeof(OutputWriter));
-        // writer->writer = writeQueue;
-        // writer->writerContext = ctxs[i];    //always write to the queue ot which the unit is assigned (the one in front of the unit)
-
-        printf("executing program\n");
-        //execute program
+        //execute program in another thread
         executeProgram(programContext);
+
+        //if sequential, then join each individual thread here (each component will complete prior to the proceeding component)
     }
+
+    //if parallel, join all threads now
 
     
 
     //output the last output in the chain.
-    writer->writer(chainOutput, writer->writerContext);
+    
+    printf("final output chain = %i\n", chainOutput);
 
-    printf("final output = %i\n", chainOutput);
+    int value = popQueue(ctxs[numChains-1]->queue);
+    writer->writer(value, writer->writerContext);
     // free((void*)programCopyStorage);
 
-    return chainOutput;
+    return value;
 }
 
 int decodeAmplifiers(int numAmplifiers, int* program, int programlength, InputReader* reader, OutputWriter* writer) {
