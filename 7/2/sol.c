@@ -6,9 +6,9 @@
 #include <string.h>
 #include <stdbool.h>
 
-InputReader* programReader;
+// InputReader* programReader;
 
-OutputWriter* programWriter;
+// OutputWriter* programWriter;
 
 static void handleAdd(struct Instruction* instruction, int* program, int* programCounter) {
     (*programCounter)++;
@@ -40,23 +40,26 @@ static void handleMultiply(struct Instruction* instruction, int* program, int* p
     program[storeLocation] = result;
 }
 
-static void handleInput(struct Instruction* instruction, int* program, int* programCounter) {
+static void handleInput(struct Instruction* instruction, int* program, int* programCounter, struct ProgramContext* ctx) {
+    printf("\nprogramId %i reading...\n", ctx->id);
     (*programCounter)++;
     //read input from somewhere
     int storeLocation = program[(*programCounter)++];
-    const char* inputString = programReader->reader(programReader->readerContext);
+    
+    const char* inputString = ctx->reader->reader(ctx->reader->readerContext);
     int input = atoi(inputString);
     //store input at location specified by program
     program[storeLocation] = input;
 }
 
-static void handleOutput(struct Instruction* instruction, int* program, int* programCounter) {
+static void handleOutput(struct Instruction* instruction, int* program, int* programCounter, struct ProgramContext* ctx) {
+    printf("\nprogramId %i writing...\n", ctx->id);
     (*programCounter)++;
     //get value to output
     int memParam = program[(*programCounter)++];
     int output = instruction->parameter->mode == DIRECT ? memParam : program[memParam];
     //write it to somewhere
-    programWriter->writer(output, programWriter->writerContext);
+    ctx->writer->writer(output, ctx->writer->writerContext);
 }
 
 static void handleJumpIfTrue(struct Instruction* instruction, int* program, int* programCounter) {
@@ -201,11 +204,11 @@ static void printIntArray(int* arr, int size) {
 
 void executeProgram(struct ProgramContext* context) {
     //store reader and writer
-    programReader = context->reader;
-    programWriter = context->writer;
+    // programReader = context->reader;
+    // programWriter = context->writer;
     int programCounter = 0;
     while (context->program[programCounter] != HALT) {
-        executeInstruction(context->program, &programCounter);
+        executeInstruction(context->program, &programCounter, context);
     }
     printf("result = ");
     printIntArray(context->program, context->programLength);
@@ -215,7 +218,7 @@ struct Parameter* nextParameter(struct Parameter* currentParameter) {
     return currentParameter->next;
 }
 
-void executeInstruction(int* program, int* programCounter) {
+void executeInstruction(int* program, int* programCounter, struct ProgramContext* ctx) {
     int pc = *programCounter;
     struct Instruction* instruction = parseInstruction(program[*programCounter]);
     switch (instruction->opcode) {
@@ -226,7 +229,7 @@ void executeInstruction(int* program, int* programCounter) {
             handleMultiply(instruction, program, programCounter);
             break;
         case  IN:
-            handleInput(instruction, program, programCounter);
+            handleInput(instruction, program, programCounter, ctx);
             break;
         case JUMP_IF_TRUE:
             handleJumpIfTrue(instruction, program, programCounter);
@@ -241,7 +244,7 @@ void executeInstruction(int* program, int* programCounter) {
             handleEquals(instruction, program, programCounter);
             break;
         case OUT:
-            handleOutput(instruction, program, programCounter);
+            handleOutput(instruction, program, programCounter, ctx);
             break;
         default:
             printf("undefined OPCODE %i. Quitting...\n", instruction->opcode);
@@ -298,38 +301,25 @@ static const char* readInputForChain() {
 }
 
 typedef struct QueueContext {
+    int id;
     struct Queue* queue;
-    pthread_cond_t* waitCondition;
-    pthread_mutex_t* mutex;
 } QueueContext;
 
 //reads from a queue in a thread-safe manner. 
 //also, if there is no input available, then the current thread waits until it's signaled that there is input available
 const char* readQueue(void* context) {
     struct QueueContext* ctx = (QueueContext*)context;
-    //wait for input data if there isn't any
-    if (sizeQueue(ctx->queue) == 0) {
-        pthread_cond_wait(ctx->waitCondition, ctx->mutex);
-    } else {
-        char* input = malloc(100*sizeof(char));
-        //lock on this queue
-        pthread_mutex_lock(ctx->mutex);
-        sprintf(input, "%i", popQueue(ctx->queue));
-        pthread_mutex_unlock(ctx->mutex);
-        return input;
-    }
+    char* input = malloc(100*sizeof(char));
+    sprintf(input, "%i", popQueue(ctx->queue));
+    return input;
 }
 
 //writes to queue in thread-safe manner.
 //this also notifies a wait condition in case another thread is waiting
 void writeQueue(int output, void* context) {
     struct QueueContext* ctx = (QueueContext*)context;
-    //lock on this queue
-    pthread_mutex_lock(ctx->mutex);
     //put data in queue and notify wait condition just in case other threads are waiting for input
     pushQueue(ctx->queue, output);
-    pthread_cond_signal(ctx->waitCondition);
-    pthread_mutex_unlock(ctx->mutex);
 }
 
 /**
@@ -342,11 +332,8 @@ int chainProgram(int numChains, bool feedbackMode, const char** inputs, int inpu
     struct QueueContext** ctxs = malloc(numChains*sizeof(QueueContext*));
     for (int i=0; i<numChains; i++) {
         struct QueueContext* ctx = malloc(sizeof(QueueContext));
+        ctx->id = i;
         ctx->queue = createQueue();
-        ctx->mutex = malloc(sizeof(pthread_mutex_t));
-        ctx->waitCondition = malloc(sizeof(pthread_cond_t));
-        pthread_mutex_init(ctx->mutex, NULL);
-        pthread_cond_init(ctx->waitCondition, NULL);
         ctxs[i] = ctx;
 
         //initialize inputs for each component. each component reads input from the previous, so set the queues up that way
@@ -356,14 +343,13 @@ int chainProgram(int numChains, bool feedbackMode, const char** inputs, int inpu
         } else {
             inputIdx = i+1;
         }
-        pushQueue(ctx->queue, atoi(inputs[inputIdx]));
+        writeQueue(atoi(inputs[inputIdx]), ctx);
     }           
 
-    //if chaining programs sequentially, we need to initialize input for the first unit
-    if (sequentialNotParallel) {
-        struct QueueContext* firstContext = ctxs[numChains-1];
-        pushQueue(firstContext->queue, 0);
-    }
+    //we need to initialize input for the first unit
+    struct QueueContext* firstContext = ctxs[numChains-1];
+    writeQueue(0, firstContext);
+
 
     pthread_t threads[numChains];
 
@@ -375,6 +361,7 @@ int chainProgram(int numChains, bool feedbackMode, const char** inputs, int inpu
         //make copy of program and store in context
         int* programCopy = malloc(programLength*sizeof(int));
         copyProgram(programCopy, program, programLength);
+        programContext->id = i;
         programContext->program = programCopy;
         programContext->programLength = programLength;
         programContext->reader = malloc(sizeof(InputReader));
@@ -384,6 +371,10 @@ int chainProgram(int numChains, bool feedbackMode, const char** inputs, int inpu
         programContext->writer->writer = writeQueue;
         programContext->writer->writerContext= ctxs[i];    //always write to the queue ot which the unit is assigned (the one in front of the unit);
         
+        int readerId = ((QueueContext*)programContext->reader->readerContext)->id;
+        int writerId = ((QueueContext*)programContext->writer->writerContext)->id;
+        printf("unit %i contexts: read=%i, write=%i\n", i, readerId, writerId);
+
         //execute program in another thread
         pthread_create(&threads[i], NULL, (void* (*)(void*))executeProgram, programContext);
 
@@ -451,10 +442,11 @@ int decodeAmplifiers(int numAmplifiers, bool feedbackMode, int inputOffset, int*
                     inputsMatch = true;
                 }
             }
-            sprintf(inputs[i] + inputOffset, "%i", permutationArray[i]);
+            //adjust inputs for offset
+            sprintf(inputs[i], "%i", permutationArray[i] + inputOffset);
         }
         
-        //don't do anything 
+        //only run the program if none of the inputs match
         if (!inputsMatch) {
             //run program
             int signal = chainProgram(numAmplifiers, feedbackMode, (const char**)inputs, inputOffset, program, programlength, reader, writer);

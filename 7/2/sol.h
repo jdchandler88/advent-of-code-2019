@@ -53,6 +53,7 @@ typedef struct OutputWriter {
  * Added day7 part 2. Need to do this so we can pass arguments to a thread
  **/
 typedef struct ProgramContext {
+    int id;
     int* program;
     int programLength;
     InputReader* reader;
@@ -85,4 +86,4 @@ int chainProgram(int numChains, bool feedbackMode, const char** inputs, int inpu
 
 void executeProgram(struct ProgramContext* context);
 
-void executeInstruction(int* program, int* programCounter);
+void executeInstruction(int* program, int* programCounter, struct ProgramContext* ctx);
