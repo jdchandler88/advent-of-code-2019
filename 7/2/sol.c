@@ -451,7 +451,7 @@ int decodeAmplifiers(int numAmplifiers, bool feedbackMode, int inputOffset, int*
                     inputsMatch = true;
                 }
             }
-            sprintf(inputs[i], "%i", permutationArray[i]);
+            sprintf(inputs[i] + inputOffset, "%i", permutationArray[i]);
         }
         
         //don't do anything 
