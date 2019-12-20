@@ -5,6 +5,10 @@
 
 int numAmps;
 
+bool feedbackMode = false;
+
+int inputOffset = 0;
+
 const char* readInput(void* arg) {
     printf("Please enter your input...\n");
     char * line = NULL;
@@ -36,7 +40,7 @@ static void programStringCallback(const char* programString) {
     OutputWriter writer;
     writer.writer = writeOutput;
     writer.writerContext = NULL;
-    decodeAmplifiers(numAmps, program, programSize, &reader, &writer);
+    decodeAmplifiers(numAmps, feedbackMode, inputOffset, program, programSize, &reader, &writer);
     //free the program storage
     free((void*)program);
 }

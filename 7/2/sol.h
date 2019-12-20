@@ -1,3 +1,5 @@
+#include <stdbool.h>
+
 /**
  * 
  **/
@@ -77,9 +79,9 @@ typedef struct Instruction {
 
 struct Instruction* parseInstruction(int instructionString);
 
-int decodeAmplifiers(int numAmplifiers, int* program, int programlength, InputReader* reader, OutputWriter* writer);
+int decodeAmplifiers(int numAmplifiers, bool feedbackMode, int inputOffset, int* program, int programlength, InputReader* reader, OutputWriter* writer);
 
-int chainProgram(int numChains, const char** inputs, int* program, int ProgramLength, InputReader* reader, OutputWriter* writer);
+int chainProgram(int numChains, bool feedbackMode, const char** inputs, int inputOffset, int* program, int ProgramLength, InputReader* reader, OutputWriter* writer);
 
 void executeProgram(struct ProgramContext* context);
 

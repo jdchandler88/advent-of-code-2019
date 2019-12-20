@@ -1,4 +1,5 @@
 #include <unity.h>
+#include <stdbool.h>
 #include <stdlib.h>
 #include "sol.h"
 
@@ -380,7 +381,7 @@ void testSequence43210ShouldReturn43210() {
     int programSize = 17;
     int program[] = {3,15,3,16,1002,16,10,16,1,16,15,15,4,15,99,0,0};
     const char* inputs[] = {"4", "3", "2", "1", "0"};
-    chainProgram(5, inputs, program, programSize, standardReader, standardWriter);
+    chainProgram(5, false, inputs, 0, program, programSize, standardReader, standardWriter);
     TEST_ASSERT_EQUAL_INT(43210, output);
 }
 
@@ -389,7 +390,7 @@ void testSequence01234ShouldReturn54321() {
     int program[] = {3,23,3,24,1002,24,10,24,1002,23,-1,23,
     101,5,23,23,1,24,23,23,4,23,99,0,0};
     const char* inputs[] = {"0", "1", "2", "3", "4"};
-    chainProgram(5, inputs, program, programSize, standardReader, standardWriter);
+    chainProgram(5, false, inputs, 0, program, programSize, standardReader, standardWriter);
     TEST_ASSERT_EQUAL_INT(54321, output);
 }
 
@@ -398,7 +399,7 @@ void testSequence10432ShouldReturn65210() {
     int program[] = {3,31,3,32,1002,32,10,32,1001,31,-2,31,1007,31,0,33,
     1002,33,7,33,1,33,31,31,1,32,31,31,4,31,99,0,0,0};
     const char* inputs[] = {"1", "0", "4", "3", "2"};
-    chainProgram(5, inputs, program, programSize, standardReader, standardWriter);
+    chainProgram(5, false, inputs, 0, program, programSize, standardReader, standardWriter);
     TEST_ASSERT_EQUAL_INT(65210, output);
 }
 
@@ -407,7 +408,7 @@ void testWeActuallyGet65210AsMaxOutput() {
     int program[] = {3,31,3,32,1002,32,10,32,1001,31,-2,31,1007,31,0,33,
     1002,33,7,33,1,33,31,31,1,32,31,31,4,31,99,0,0,0};
     const char* inputs[] = {"1", "0", "4", "3", "2"};
-    int result = decodeAmplifiers(5, program, programSize, standardReader, standardWriter);
+    int result = decodeAmplifiers(5, false, 0, program, programSize, standardReader, standardWriter);
     TEST_ASSERT_EQUAL_INT(65210, result);
 }
 

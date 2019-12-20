@@ -335,8 +335,8 @@ void writeQueue(int output, void* context) {
 /**
  * This function chains programs together. Specifically, output from one is fed to input for two, etc.
  */ 
-int chainProgram(int numChains, const char** inputs, int* program, int programLength, InputReader* reader, OutputWriter* writer) {
-    bool sequentialNotParallel = true;  //if true, then execute programs sequentially. otherwise, execute them in parallel
+int chainProgram(int numChains, bool feedbackMode, const char** inputs, int inputOffset, int* program, int programLength, InputReader* reader, OutputWriter* writer) {
+    bool sequentialNotParallel = !feedbackMode;  //if true, then execute programs sequentially. otherwise, execute them in parallel
 
     //queues for communication between units
     struct QueueContext** ctxs = malloc(numChains*sizeof(QueueContext*));
@@ -394,21 +394,22 @@ int chainProgram(int numChains, const char** inputs, int* program, int programLe
     }
 
     //if parallel, join all threads now
-
-    
+    if (!sequentialNotParallel) {
+        for (int i=0; i<numChains; i++) {
+            pthread_join(threads[i], NULL);
+        }
+    }
 
     //output the last output in the chain.
-    
-    printf("final output chain = %i\n", chainOutput);
-
     int value = popQueue(ctxs[numChains-1]->queue);
     writer->writer(value, writer->writerContext);
+
     // free((void*)programCopyStorage);
 
     return value;
 }
 
-int decodeAmplifiers(int numAmplifiers, int* program, int programlength, InputReader* reader, OutputWriter* writer) {
+int decodeAmplifiers(int numAmplifiers, bool feedbackMode, int inputOffset, int* program, int programlength, InputReader* reader, OutputWriter* writer) {
 
     //will do this dynamically. just in case there are a different number of amplifiers in the future. also, i want to 
     //fiure out how to do this generically.
@@ -456,7 +457,7 @@ int decodeAmplifiers(int numAmplifiers, int* program, int programlength, InputRe
         //don't do anything 
         if (!inputsMatch) {
             //run program
-            int signal = chainProgram(numAmplifiers, (const char**)inputs, program, programlength, reader, writer);
+            int signal = chainProgram(numAmplifiers, feedbackMode, (const char**)inputs, inputOffset, program, programlength, reader, writer);
             if (signal > maxSignal) {
                 maxSignal = signal;
             }
