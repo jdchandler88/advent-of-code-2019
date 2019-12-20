@@ -9,4 +9,4 @@ typedef struct Image {
     struct Layer** layers;
 } Image;
 
-struct Image* createImage(int width, int height, const char* input);
+struct Image* parseImage(int width, int height, const char* input);

@@ -20,7 +20,7 @@ Layer 2: 789
 **/
 
 void imageShouldHaveTwoLayersAndAppropriateData() {
-    struct Image* image = createImage(3, 2, "123456789012");
+    struct Image* image = parseImage(3, 2, "123456789012");
     //number of layers
     TEST_ASSERT_EQUAL_INT(2, image->numLayers);
     //data in each layer
