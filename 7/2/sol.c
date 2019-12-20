@@ -41,7 +41,6 @@ static void handleMultiply(struct Instruction* instruction, int* program, int* p
 }
 
 static void handleInput(struct Instruction* instruction, int* program, int* programCounter, struct ProgramContext* ctx) {
-    printf("\nprogramId %i reading...\n", ctx->id);
     (*programCounter)++;
     //read input from somewhere
     int storeLocation = program[(*programCounter)++];
@@ -53,7 +52,6 @@ static void handleInput(struct Instruction* instruction, int* program, int* prog
 }
 
 static void handleOutput(struct Instruction* instruction, int* program, int* programCounter, struct ProgramContext* ctx) {
-    printf("\nprogramId %i writing...\n", ctx->id);
     (*programCounter)++;
     //get value to output
     int memParam = program[(*programCounter)++];
@@ -203,9 +201,6 @@ static void printIntArray(int* arr, int size) {
 }
 
 void executeProgram(struct ProgramContext* context) {
-    //store reader and writer
-    // programReader = context->reader;
-    // programWriter = context->writer;
     int programCounter = 0;
     while (context->program[programCounter] != HALT) {
         executeInstruction(context->program, &programCounter, context);
@@ -256,48 +251,8 @@ void executeInstruction(int* program, int* programCounter, struct ProgramContext
     free(instruction);
 }
 
-
-/**
- * BEGIN CODE FOR DAY 7 PART 1
- **/ 
- 
 static void copyProgram(int* storageLocation, int* program, int programLength) {
    memcpy(storageLocation, program, programLength * sizeof(int));
-}
-
-static InputReader* chainReader;
-
-static OutputWriter* chainWriter;
-
-static int chainOutput;
-/**
- * This output writer stores the output for intermediate programs. This output is then
- * used by the reader below. This is the mechanism for passing output between programs.
- */ 
-static void writeOutputForChain(int output, void* arg) {
-    printf("outputting: %i\n", output);
-    chainOutput = output;
-}
-
-static const char* inputForChain;
-static char* signalString;
-bool phaseNotSignal = true;
-/**
- * this reader toggles between reading input from "user" and from "output". This makes this program automatable.
- * The first thing to read is the phase [0,4]. The second thing to read is amplifier signal. Then the next program 
- * needs to do the same thing. And so on. This is the mechanism for passing output between programs.
- */ 
-static const char* readInputForChain() {
-    if (phaseNotSignal) {
-        printf("readingPhase: %s\n", inputForChain);
-        phaseNotSignal = !phaseNotSignal;
-        return inputForChain;
-    } else {
-        sprintf(signalString, "%i", chainOutput);
-        printf("readingSignal: int=%i, str=%s\n", chainOutput, signalString);
-        phaseNotSignal = !phaseNotSignal;
-        return signalString;
-    }
 }
 
 typedef struct QueueContext {
@@ -370,10 +325,6 @@ int chainProgram(int numChains, bool feedbackMode, const char** inputs, int inpu
         programContext->writer = malloc(sizeof(OutputWriter));
         programContext->writer->writer = writeQueue;
         programContext->writer->writerContext= ctxs[i];    //always write to the queue ot which the unit is assigned (the one in front of the unit);
-        
-        int readerId = ((QueueContext*)programContext->reader->readerContext)->id;
-        int writerId = ((QueueContext*)programContext->writer->writerContext)->id;
-        printf("unit %i contexts: read=%i, write=%i\n", i, readerId, writerId);
 
         //execute program in another thread
         pthread_create(&threads[i], NULL, (void* (*)(void*))executeProgram, programContext);

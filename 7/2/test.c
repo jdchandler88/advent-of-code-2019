@@ -455,9 +455,10 @@ void testWeActuallyGet139629729AsMaxOutputParallel() {
     53,1001,56,-1,56,1005,56,6,99,0,0,0,0,10
  **/ 
 void testWeActuallyGet18216AsMaxOutputParallel() {
-    int programSize = 34;
-    int program[] = {3,31,3,32,1002,32,10,32,1001,31,-2,31,1007,31,0,33,
-    1002,33,7,33,1,33,31,31,1,32,31,31,4,31,99,0,0,0};
+    int programSize = 57;
+    int program[] = {3,52,1001,52,-5,52,3,53,1,52,56,54,1007,54,5,55,1005,55,26,1001,54,
+    -5,54,1105,1,12,1,53,54,53,1008,54,0,55,1001,55,1,55,2,53,55,53,4,
+    53,1001,56,-1,56,1005,56,6,99,0,0,0,0,10};
     const char* inputs[] = {"4", "2", "3", "0", "1"};
     //5 amps, parallel mode, offset 5
     int result = decodeAmplifiers(5, 1, 5, program, programSize, standardReader, standardWriter);
@@ -467,36 +468,36 @@ void testWeActuallyGet18216AsMaxOutputParallel() {
 // not needed when using generate_test_runner.rb
 int main(void) {
     UNITY_BEGIN();
-    // RUN_TEST(testParsingMixedModeInstruction);
-    // RUN_TEST(testParsingAddMixedModeInstruction);
-    // RUN_TEST(testParsingInputInstruction);
-    // RUN_TEST(testParsingOutputInstruction);
-    // RUN_TEST(testParsingHaltInstruction);
-    // RUN_TEST(testExecuteMixedModeInstruction);
-    // RUN_TEST(testInput);
-    // RUN_TEST(testOutput);
-    // RUN_TEST(testSimpleIOProgram);
+    RUN_TEST(testParsingMixedModeInstruction);
+    RUN_TEST(testParsingAddMixedModeInstruction);
+    RUN_TEST(testParsingInputInstruction);
+    RUN_TEST(testParsingOutputInstruction);
+    RUN_TEST(testParsingHaltInstruction);
+    RUN_TEST(testExecuteMixedModeInstruction);
+    RUN_TEST(testInput);
+    RUN_TEST(testOutput);
+    RUN_TEST(testSimpleIOProgram);
 
-    // RUN_TEST(testEqualTo8IndirectWithEqualInput);
-    // RUN_TEST(testEqualTo8IndirectWithNotEqualInput);
-    // RUN_TEST(testLessThan8IndirectWithLessThanInput);
-    // RUN_TEST(testLessThan8IndirectWithGreaterThanInput);
-    // RUN_TEST(testEqualTo8DirectWithEqualInput);
-    // RUN_TEST(testEqualTo8DirectWithNotEqualInput);
-    // RUN_TEST(testLessThan8DirectWithLessThanInput);
-    // RUN_TEST(testLessThan8DirectWithGreaterThanInput);
-    // RUN_TEST(testJumpsShouldOutput0With0InputIndirect);
-    // RUN_TEST(testJumpsShouldOutput1WithNonZeroInputIndirect);
-    // RUN_TEST(testJumpsShouldOutput0With0InputDirect);
-    // RUN_TEST(testJumpsShouldOutput1WithNonZeroInputDirect);
-    // RUN_TEST(testProgramOutputs999WithInputLessThan8);
-    // RUN_TEST(testProgramOutputs1000IfInputEqualTo8);
-    // RUN_TEST(testProgramOutputs1001IfInputGreaterThan8);
+    RUN_TEST(testEqualTo8IndirectWithEqualInput);
+    RUN_TEST(testEqualTo8IndirectWithNotEqualInput);
+    RUN_TEST(testLessThan8IndirectWithLessThanInput);
+    RUN_TEST(testLessThan8IndirectWithGreaterThanInput);
+    RUN_TEST(testEqualTo8DirectWithEqualInput);
+    RUN_TEST(testEqualTo8DirectWithNotEqualInput);
+    RUN_TEST(testLessThan8DirectWithLessThanInput);
+    RUN_TEST(testLessThan8DirectWithGreaterThanInput);
+    RUN_TEST(testJumpsShouldOutput0With0InputIndirect);
+    RUN_TEST(testJumpsShouldOutput1WithNonZeroInputIndirect);
+    RUN_TEST(testJumpsShouldOutput0With0InputDirect);
+    RUN_TEST(testJumpsShouldOutput1WithNonZeroInputDirect);
+    RUN_TEST(testProgramOutputs999WithInputLessThan8);
+    RUN_TEST(testProgramOutputs1000IfInputEqualTo8);
+    RUN_TEST(testProgramOutputs1001IfInputGreaterThan8);
 
-    // RUN_TEST(testSequence43210ShouldReturn43210);
-    // RUN_TEST(testSequence01234ShouldReturn54321);
-    // RUN_TEST(testSequence10432ShouldReturn65210);
-    // RUN_TEST(testWeActuallyGet65210AsMaxOutput);
+    RUN_TEST(testSequence43210ShouldReturn43210);
+    RUN_TEST(testSequence01234ShouldReturn54321);
+    RUN_TEST(testSequence10432ShouldReturn65210);
+    RUN_TEST(testWeActuallyGet65210AsMaxOutput);
 
     RUN_TEST(testWeActuallyGet139629729AsMaxOutputParallel);
     RUN_TEST(testWeActuallyGet18216AsMaxOutputParallel);
