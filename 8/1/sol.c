@@ -13,6 +13,8 @@ struct Image* parseImage(int width, int height, const char* input) {
     //create storage for each layer's data
     for (int i=0; i<numLayers; i++) {
         struct Layer* layer = malloc(sizeof(Layer));
+        layer->width = width;
+        layer->height = height;
         layer->pixels = malloc(height*sizeof(char*));   //height = number of rows. create storage for each row.
         for (int row=0; row<=height; row++) {
             layer->pixels[row] = malloc(width*sizeof(char));    //create memory for enough characters in the row
@@ -32,3 +34,18 @@ struct Image* parseImage(int width, int height, const char* input) {
 
     return image;
 } 
+
+int sumDigitInLayer(int digit, struct Layer* layer) {
+    int sum = 0;
+    char buf[1];
+    for (int rowIdx=0; rowIdx<layer->height; rowIdx++) {
+        const char* row = layer->pixels[rowIdx];
+        for (int column=0; column<layer->width; column++) {
+            memcpy(&buf, row+column, 1);
+            if (atoi(buf) == digit) {
+                sum++;
+            }
+        }
+    }
+    return sum;
+}
