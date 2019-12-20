@@ -62,3 +62,11 @@ int findLayerWithLeastDigitCount(struct Image* image, int digit) {
     }
     return minLayer;
 }
+
+int solutionForPart1(int width, int height, const char* input) {
+    struct Image* image = parseImage(width, height, input);
+    int layerIdx = findLayerWithLeastDigitCount(image, 0);  //find the layer with minimum number of zeros
+    int sumOnes = sumDigitInLayer(1, image->layers[layerIdx]);
+    int sumTwos = sumDigitInLayer(2, image->layers[layerIdx]);
+    return sumOnes * sumTwos;
+}

@@ -1,6 +1,7 @@
 #include "utils.h"
 #include <stdlib.h>
 #include <string.h>
+#include <pthread.h>
 
 void readLines(FILE* file, void (*lineCallback)(const char*)) {
     char * line = NULL;
@@ -77,6 +78,8 @@ void freeLinkedList(void* node, void* (*next)(void*)) {
 
 struct Queue {
   int id;
+  pthread_mutex_t mutex;
+  pthread_cond_t cond;
   int* queue;
   int numQueued;
   int maxQueueSize;
@@ -88,6 +91,8 @@ static int idCounter = 0;
 struct Queue* createQueue() {
     struct Queue* queue = malloc(sizeof(struct Queue));
     queue->id = idCounter++;
+    pthread_mutex_init(&queue->mutex, NULL);
+    pthread_cond_init(&queue->cond, NULL);
     queue->numQueued = 0;
     queue->maxQueueSize = QUEUE_GROWTH_SIZE;
     queue->queue = malloc(queue->maxQueueSize*sizeof(int));
@@ -95,36 +100,46 @@ struct Queue* createQueue() {
 }
 
 void destroyQueue(struct Queue* queue) {
+    pthread_mutex_destroy(&queue->mutex);
+    pthread_cond_destroy(&queue->cond);
     free(queue->queue);
     free(queue);
 }
 
 void pushQueue(struct Queue* queue, int value) {
+    pthread_mutex_lock(&queue->mutex);
     //is there enough room? if so, add it. if not, reize it
     if (queue->maxQueueSize == queue->numQueued) {
         increaseQueueSize(queue, QUEUE_GROWTH_SIZE);
     }
     queue->queue[queue->numQueued] = value;
     queue->numQueued++;
+    pthread_cond_signal(&queue->cond);
+    pthread_mutex_unlock(&queue->mutex);
 }
 
 int popQueue(struct Queue* queue) {
+    pthread_mutex_lock(&queue->mutex);
     //is there anything in the queue? if so, then get it. if not, then suspend until there is something available.
     if (queue->numQueued == 0) {
-        //wait
-    } else {
-        queue->numQueued--;
-        int value=queue->queue[0];
-        //shift values up (a more sophisticated implementation would use a circular pointer or something...)
-        for (int i=0; i<queue->numQueued; i++) {
-            queue->queue[i] = queue->queue[i+1];
-        }
-        return value;
+        //wait for write to queue
+        pthread_cond_wait(&queue->cond, &queue->mutex);
+    } 
+    queue->numQueued--;
+    int value=queue->queue[0];
+    //shift values up (a more sophisticated implementation would use a circular pointer or something...)
+    for (int i=0; i<queue->numQueued; i++) {
+        queue->queue[i] = queue->queue[i+1];
     }
+    pthread_mutex_unlock(&queue->mutex);
+    return value;
 }
 
 int sizeQueue(struct Queue* queue) {
-    return queue->numQueued;
+    pthread_mutex_lock(&queue->mutex);
+    int value = queue->numQueued;
+    pthread_mutex_unlock(&queue->mutex);
+    return value;
 }
 
 static int increaseQueueSize(struct Queue* queue, int growthSize) {

@@ -8,6 +8,7 @@ int width;
 int height;
 
 void lineCallback(const char* line) {
+    printf("solution for part1 = %i\n", solutionForPart1(width, height, line));
 }
 
 int main(int argc, char** argv) {
