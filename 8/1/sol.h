@@ -14,3 +14,5 @@ typedef struct Image {
 struct Image* parseImage(int width, int height, const char* input);
 
 int sumDigitInLayer(int digit, struct Layer* layer);
+
+int findLayerWithLeastDigitCount(struct Image* image, int digit);

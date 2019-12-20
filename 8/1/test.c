@@ -36,10 +36,16 @@ void sumOf0InLayerShouldBeThreeAndOne() {
     TEST_ASSERT_EQUAL_INT(1, sumDigitInLayer(0, image->layers[1]));
 }
 
+void leastZerosShouldBeInLayer0() {
+    struct Image* image = parseImage(3, 2, "103050789012");
+    TEST_ASSERT_EQUAL_INT(1, findLayerWithLeastDigitCount(image, 0));
+}
+
 // not needed when using generate_test_runner.rb
 int main(void) {
     UNITY_BEGIN();
     RUN_TEST(imageShouldHaveTwoLayersAndAppropriateData);
     RUN_TEST(sumOf0InLayerShouldBeThreeAndOne);
+    RUN_TEST(leastZerosShouldBeInLayer0);
     return UNITY_END();
 }

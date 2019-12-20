@@ -49,3 +49,16 @@ int sumDigitInLayer(int digit, struct Layer* layer) {
     }
     return sum;
 }
+
+int findLayerWithLeastDigitCount(struct Image* image, int digit) {
+    int min = __INT_MAX__;
+    int minLayer = -1;
+    for (int layerIdx=0; layerIdx<image->numLayers; layerIdx++) {
+        int sumOfDigits = sumDigitInLayer(digit, image->layers[layerIdx]);
+        if (sumOfDigits < min) {
+            min = sumOfDigits; 
+            minLayer = layerIdx;
+        }
+    }
+    return minLayer;
+}
