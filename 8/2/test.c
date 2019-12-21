@@ -43,12 +43,6 @@ void leastZerosShouldBeInLayer0() {
     TEST_ASSERT_EQUAL_INT(1, findLayerWithLeastDigitCount(image, 0));
 }
 
-int pixelValue(struct Layer* layer, int row, int col) {
-    char buf[1];
-    memcpy(&buf, layer->pixels[row]+col, 1);
-    return atoi(buf);
-}
-
 /**
  * For example, given an image 2 pixels wide and 2 pixels tall, the image data 0222112222120000 corresponds to the following image layers:
 

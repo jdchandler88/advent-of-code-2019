@@ -65,8 +65,40 @@ struct Layer* composite(struct Image* image) {
             }
         }
     }
-
     return composite;
+}
+
+int pixelValue(struct Layer* layer, int row, int col) {
+    char buf[1];
+    memcpy(&buf, layer->pixels[row]+col, 1);
+    return atoi(buf);
+}
+
+void printImage(struct Image* image) {
+    struct Layer* compositeLayer = composite(image);
+
+    for (int rowIdx=0; rowIdx<image->height; rowIdx++) {
+        for (int colIdx=0; colIdx<image->width; colIdx++) {
+            int pixel = pixelValue(compositeLayer, rowIdx, colIdx);
+            const char* string;
+            switch (pixel) {
+                case 0:
+                    string = "   ";
+                    break;
+                case 1:
+                    string = "***";
+                    break;
+                case 2:
+                    string = "XXX";
+                    break;
+                default:
+                    string = "XXX";
+                    break;
+            }
+            printf("%s", string);
+        }
+        printf("\n");
+    }
 }
 
 int sumDigitInLayer(int digit, struct Layer* layer) {
@@ -103,4 +135,9 @@ int solutionForPart1(int width, int height, const char* input) {
     int sumOnes = sumDigitInLayer(1, image->layers[layerIdx]);
     int sumTwos = sumDigitInLayer(2, image->layers[layerIdx]);
     return sumOnes * sumTwos;
+}
+
+void solutionForPart2(int width, int height, const char* input) {
+    struct Image* image = parseImage(width, height, input);
+    printImage(image);
 }
