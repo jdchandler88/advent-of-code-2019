@@ -1,4 +1,6 @@
 #include <unity.h>
+#include <stdlib.h>
+#include <string.h>
 #include "sol.h"
 
 void setUp() {}
@@ -41,6 +43,12 @@ void leastZerosShouldBeInLayer0() {
     TEST_ASSERT_EQUAL_INT(1, findLayerWithLeastDigitCount(image, 0));
 }
 
+int pixelValue(struct Layer* layer, int row, int col) {
+    char buf[1];
+    memcpy(&buf, layer->pixels[row]+col, 1);
+    return atoi(buf);
+}
+
 /**
  * For example, given an image 2 pixels wide and 2 pixels tall, the image data 0222112222120000 corresponds to the following image layers:
 
@@ -71,10 +79,11 @@ So, the final image looks like this:
  **/ 
 void pixelsShouldRenderProperly() {
     struct Image* image = parseImage(2, 2, "0222112222120000");
-    TEST_ASSERT_EQUAL_INT(0, composite(image)->pixels[0][0]);
-    TEST_ASSERT_EQUAL_INT(1, composite(image)->pixels[0][1]);
-    TEST_ASSERT_EQUAL_INT(1, composite(image)->pixels[1][0]);
-    TEST_ASSERT_EQUAL_INT(0, composite(image)->pixels[1][1]);
+    struct Layer* compositeLayer = composite(image);
+    TEST_ASSERT_EQUAL_INT(0, pixelValue(compositeLayer, 0, 0));
+    TEST_ASSERT_EQUAL_INT(1, pixelValue(compositeLayer, 0, 1));
+    TEST_ASSERT_EQUAL_INT(1, pixelValue(compositeLayer, 1, 0));
+    TEST_ASSERT_EQUAL_INT(0, pixelValue(compositeLayer, 1, 1));
 }
 
 // not needed when using generate_test_runner.rb

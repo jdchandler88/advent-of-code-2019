@@ -9,6 +9,8 @@ struct Image* parseImage(int width, int height, const char* input) {
     struct Image* image = malloc(sizeof(Image));
     //create storage for layers
     image->numLayers = numLayers;
+    image->width = width;
+    image->height = height;
     image->layers = malloc(numLayers*sizeof(Layer*));
     //create storage for each layer's data
     for (int i=0; i<numLayers; i++) {

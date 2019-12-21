@@ -20,6 +20,8 @@ struct Image* parseImage(int width, int height, const char* input) {
     struct Image* image = malloc(sizeof(Image));
     //create storage for layers
     image->numLayers = numLayers;
+    image->width = width;
+    image->height = height;
     image->layers = malloc(numLayers*sizeof(Layer*));
     //create storage for each layer's data
     for (int i=0; i<numLayers; i++) {
@@ -39,6 +41,33 @@ struct Image* parseImage(int width, int height, const char* input) {
 
     return image;
 } 
+
+//0 is black, 1 is white, and 2 is transparent.
+struct Layer* composite(struct Image* image) {
+    struct Layer* composite = createLayer(image->width, image->height);
+    char pixelCopy[1];
+    //iterate through pixels. we need to see value in each layer
+    for (int rowIdx=0; rowIdx<image->height; rowIdx++) {
+        for (int colIdx=0; colIdx<image->width; colIdx++) {
+            //initialize composite pixel to transparent
+            memcpy((char*)composite->pixels[rowIdx]+colIdx, "2", 1);
+            //iterate through layers at the pixel to form composite
+            for (int layerIdx=0; layerIdx<image->numLayers; layerIdx++) {
+                struct Layer* currentLayer = image->layers[layerIdx];
+                //get the int value of the character in the string
+                memcpy(&pixelCopy, currentLayer->pixels[rowIdx]+colIdx, 1);
+                int pixelValue = atoi(pixelCopy);
+                //if it's an opaque color, then copy that into the composite
+                if (pixelValue==0 || pixelValue ==1) {  //opaque color found. set this value in the composite
+                    memcpy((char*)composite->pixels[rowIdx]+colIdx, currentLayer->pixels[rowIdx]+colIdx, 1);
+                    break;
+                }
+            }
+        }
+    }
+
+    return composite;
+}
 
 int sumDigitInLayer(int digit, struct Layer* layer) {
     int sum = 0;
@@ -74,19 +103,4 @@ int solutionForPart1(int width, int height, const char* input) {
     int sumOnes = sumDigitInLayer(1, image->layers[layerIdx]);
     int sumTwos = sumDigitInLayer(2, image->layers[layerIdx]);
     return sumOnes * sumTwos;
-}
-
-struct Layer* composite(struct Image* image) {
-    struct Layer* composite = createLayer(image->width, image->height);
-
-    //iterate through pixels. we need to see value in each layer
-    //2==transparent, 1==white, 0==black
-
-    //iterate through layers
-
-    for (int layerIdx=0; layerIdx<image->numLayers; layerIdx++) {
-
-    }
-
-    return composite;
 }
