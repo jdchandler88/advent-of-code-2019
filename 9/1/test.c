@@ -109,6 +109,7 @@ void tearDown() {
 
 struct ProgramContext* initializeContext(int* program, int programSize, InputReader* standardReader, OutputWriter* standardWriter) {
     context->programCounter = 0;
+    context->relativeBase = 0;
     context->program = program;
     context->programLength = programSize;
     context->reader = standardReader;
@@ -518,9 +519,10 @@ void testWeActuallyGet18216AsMaxOutputParallel() {
  **/ 
 void opcode9ShouldAdjustRelativeBase() {
     int programSize = 3;
-    int program[] = {109,20,99};
+    int program[] = {109,20,9,0,99};
     executeProgram(initializeContext(program, programSize, queueReader, queueWriter));
-    TEST_ASSERT_EQUAL_INT(20, 20);
+    //first adds 20 (direct), then adds 109 (indirect). 129 final
+    TEST_ASSERT_EQUAL_INT(129, context->relativeBase);
 }
 
 //109,1,204,-1,1001,100,1,100,1008,100,16,101,1006,101,0,99 takes no input and produces a copy of itself as output.
@@ -587,6 +589,7 @@ int main(void) {
     RUN_TEST(testWeActuallyGet139629729AsMaxOutputParallel);
     RUN_TEST(testWeActuallyGet18216AsMaxOutputParallel);
 
+    RUN_TEST(opcode9ShouldAdjustRelativeBase);
     RUN_TEST(day9ProgramShouldProduceCopyOfItselfAsOutput);
     RUN_TEST(day9ProgramShouldOutput16DigitNumber);
     RUN_TEST(day9ProgramShouldOutputNumberInMiddleOfProgram);

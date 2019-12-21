@@ -127,9 +127,8 @@ static void handleAdjustRelativeBase(struct Instruction* instruction, struct Pro
     int* program = ctx->program;
 
     (*programCounter)++;
-
-    printf("NOOOOOPE\n");
-    exit(1);
+    int adjustValue = getValueFromMemoryAndIncrementProgramCounter(instruction->parameter->mode, ctx);
+    ctx->relativeBase += adjustValue;
 }
 
 static int getNumberOfParams(enum OpCode opcode) {
