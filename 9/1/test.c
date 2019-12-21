@@ -107,7 +107,8 @@ void tearDown() {
     destroyQueue(outputQueue);
 }
 
-struct ProgramContext* setContext(int* program, int programSize, InputReader* standardReader, OutputWriter* standardWriter) {
+struct ProgramContext* initializeContext(int* program, int programSize, InputReader* standardReader, OutputWriter* standardWriter) {
+    context->programCounter = 0;
     context->program = program;
     context->programLength = programSize;
     context->reader = standardReader;
@@ -178,7 +179,7 @@ void testExecuteMixedModeInstruction() {
     int program[] = {1002,4,3,4,33};
     int expected[] = {1002,4,3,4,99};
     //execute program
-    executeProgram(setContext(program, programSize, standardReader, standardWriter));
+    executeProgram(initializeContext(program, programSize, standardReader, standardWriter));
     TEST_ASSERT_EQUAL_INT_ARRAY(expected, program, programSize);
 }
 
@@ -188,13 +189,14 @@ void testExecuteMixedModeInstruction() {
     take an input value and store it at address 50.
 **/ 
 void testInput() {
+    printf("ass\n");
     int programSize = 3;
     int program[] = {3,1,99};
     int expected[] = {3,1234,99};
     //test input
     input = "1234";
     //execute program
-    executeProgram(setContext(program, programSize, standardReader, standardWriter));
+    executeProgram(initializeContext(program, programSize, standardReader, standardWriter));
     TEST_ASSERT_EQUAL_INT_ARRAY(expected, program, programSize);
 }
 
@@ -207,7 +209,7 @@ void testOutput() {
     int program[] = {4,0,99};
     //execute program
     //need to add 'ouptput writer' that will capture output to wherever we specify
-    executeProgram(setContext(program, programSize, standardReader, standardWriter));
+    executeProgram(initializeContext(program, programSize, standardReader, standardWriter));
     TEST_ASSERT_EQUAL_INT(4, output);
 }
 
@@ -222,7 +224,7 @@ void testSimpleIOProgram() {
     int expected[] = {4321,0,4,0,99};
     input = "4321";
     //execute program
-    executeProgram(setContext(program, programSize, standardReader, standardWriter));
+    executeProgram(initializeContext(program, programSize, standardReader, standardWriter));
     TEST_ASSERT_EQUAL_INT(4321, output);
     TEST_ASSERT_EQUAL_INT_ARRAY(expected, program, programSize);
 }
@@ -232,7 +234,7 @@ void testEqualTo8IndirectWithEqualInput() {
     input = "8";
     int programSize = 11;
     int program[] = {3,9,8,9,10,9,4,9,99,-1,8};
-    executeProgram(setContext(program, programSize, standardReader, standardWriter));
+    executeProgram(initializeContext(program, programSize, standardReader, standardWriter));
     TEST_ASSERT_EQUAL_INT(1, output);
 }
 
@@ -241,7 +243,7 @@ void testEqualTo8IndirectWithNotEqualInput() {
     input = "6";
     int programSize = 11;
     int program[] = {3,9,8,9,10,9,4,9,99,-1,8};
-    executeProgram(setContext(program, programSize, standardReader, standardWriter));
+    executeProgram(initializeContext(program, programSize, standardReader, standardWriter));
     TEST_ASSERT_EQUAL_INT(0, output);
 }
 
@@ -250,7 +252,7 @@ void testLessThan8IndirectWithLessThanInput() {
     input = "6";
     int programSize = 11;
     int program[] = {3,9,7,9,10,9,4,9,99,-1,8};
-    executeProgram(setContext(program, programSize, standardReader, standardWriter));
+    executeProgram(initializeContext(program, programSize, standardReader, standardWriter));
     TEST_ASSERT_EQUAL_INT(1, output);
 }
 
@@ -259,7 +261,7 @@ void testLessThan8IndirectWithGreaterThanInput() {
     input = "8";
     int programSize = 11;
     int program[] = {3,9,7,9,10,9,4,9,99,-1,8};
-    executeProgram(setContext(program, programSize, standardReader, standardWriter));
+    executeProgram(initializeContext(program, programSize, standardReader, standardWriter));
     TEST_ASSERT_EQUAL_INT(0, output);
 }
 
@@ -268,7 +270,7 @@ void testEqualTo8DirectWithEqualInput() {
     input = "8";
     int programSize = 11;
     int program[] = {3,3,1108,-1,8,3,4,3,99};
-    executeProgram(setContext(program, programSize, standardReader, standardWriter));
+    executeProgram(initializeContext(program, programSize, standardReader, standardWriter));
     TEST_ASSERT_EQUAL_INT(1, output);
 }
 
@@ -277,7 +279,7 @@ void testEqualTo8DirectWithNotEqualInput() {
     input = "9";
     int programSize = 11;
     int program[] = {3,3,1108,-1,8,3,4,3,99};
-    executeProgram(setContext(program, programSize, standardReader, standardWriter));
+    executeProgram(initializeContext(program, programSize, standardReader, standardWriter));
     TEST_ASSERT_EQUAL_INT(0, output);
 }
 
@@ -286,7 +288,7 @@ void testLessThan8DirectWithLessThanInput() {
     input = "7";
     int programSize = 9;
     int program[] = {3,3,1107,-1,8,3,4,3,99};
-    executeProgram(setContext(program, programSize, standardReader, standardWriter));
+    executeProgram(initializeContext(program, programSize, standardReader, standardWriter));
     TEST_ASSERT_EQUAL_INT(1, output);
 }
 
@@ -295,7 +297,7 @@ void testLessThan8DirectWithGreaterThanInput() {
     input = "8";
     int programSize = 9;
     int program[] = {3,3,1107,-1,8,3,4,3,99};
-    executeProgram(setContext(program, programSize, standardReader, standardWriter));
+    executeProgram(initializeContext(program, programSize, standardReader, standardWriter));
     TEST_ASSERT_EQUAL_INT(0, output);
 }
 
@@ -304,7 +306,7 @@ void testJumpsShouldOutput0With0InputIndirect() {
     input = "0";
     int programSize = 16;
     int program[] = {3,12,6,12,15,1,13,14,13,4,13,99,-1,0,1,9};
-    executeProgram(setContext(program, programSize, standardReader, standardWriter));
+    executeProgram(initializeContext(program, programSize, standardReader, standardWriter));
     TEST_ASSERT_EQUAL_INT(0, output);
 }
 
@@ -313,7 +315,7 @@ void testJumpsShouldOutput1WithNonZeroInputIndirect() {
     input = "1";
     int programSize = 16;
     int program[] = {3,12,6,12,15,1,13,14,13,4,13,99,-1,0,1,9};
-    executeProgram(setContext(program, programSize, standardReader, standardWriter));
+    executeProgram(initializeContext(program, programSize, standardReader, standardWriter));
     TEST_ASSERT_EQUAL_INT(1, output);
 }
 
@@ -322,7 +324,7 @@ void testJumpsShouldOutput0With0InputDirect() {
     input = "0";
     int programSize = 13;
     int program[] = {3,3,1105,-1,9,1101,0,0,12,4,12,99,1};
-    executeProgram(setContext(program, programSize, standardReader, standardWriter));
+    executeProgram(initializeContext(program, programSize, standardReader, standardWriter));
     TEST_ASSERT_EQUAL_INT(0, output);
 }
 
@@ -331,7 +333,7 @@ void testJumpsShouldOutput1WithNonZeroInputDirect() {
     input = "1";
     int programSize = 13;
     int program[] = {3,3,1105,-1,9,1101,0,0,12,4,12,99,1};
-    executeProgram(setContext(program, programSize, standardReader, standardWriter));
+    executeProgram(initializeContext(program, programSize, standardReader, standardWriter));
     TEST_ASSERT_EQUAL_INT(1, output);
 }
 
@@ -350,7 +352,7 @@ void testProgramOutputs999WithInputLessThan8() {
     int program[] = {3,21,1008,21,8,20,1005,20,22,107,8,21,20,1006,20,31,
     1106,0,36,98,0,0,1002,21,125,20,4,20,1105,1,46,104,
     999,1105,1,46,1101,1000,1,20,4,20,1105,1,46,98,99};
-    executeProgram(setContext(program, programSize, standardReader, standardWriter));
+    executeProgram(initializeContext(program, programSize, standardReader, standardWriter));
     TEST_ASSERT_EQUAL_INT(999, output);
 }
 
@@ -369,7 +371,7 @@ void testProgramOutputs1000IfInputEqualTo8() {
     int program[] = {3,21,1008,21,8,20,1005,20,22,107,8,21,20,1006,20,31,
     1106,0,36,98,0,0,1002,21,125,20,4,20,1105,1,46,104,
     999,1105,1,46,1101,1000,1,20,4,20,1105,1,46,98,99};
-    executeProgram(setContext(program, programSize, standardReader, standardWriter));
+    executeProgram(initializeContext(program, programSize, standardReader, standardWriter));
     TEST_ASSERT_EQUAL_INT(1000, output);
 }
 
@@ -388,7 +390,7 @@ void testProgramOutputs1001IfInputGreaterThan8() {
     int program[] = {3,21,1008,21,8,20,1005,20,22,107,8,21,20,1006,20,31,
     1106,0,36,98,0,0,1002,21,125,20,4,20,1105,1,46,104,
     999,1105,1,46,1101,1000,1,20,4,20,1105,1,46,98,99};
-    executeProgram(setContext(program, programSize, standardReader, standardWriter));
+    executeProgram(initializeContext(program, programSize, standardReader, standardWriter));
     TEST_ASSERT_EQUAL_INT(1001, output);
 }
 
@@ -510,12 +512,22 @@ void testWeActuallyGet18216AsMaxOutputParallel() {
 
  **/
 
+/**
+ * Opcode 9 adjusts the relative base by the value of its only parameter. 
+ * The relative base increases (or decreases, if the value is negative) by the value of the parameter.
+ **/ 
+void opcode9ShouldAdjustRelativeBase() {
+    int programSize = 3;
+    int program[] = {109,20,99};
+    executeProgram(initializeContext(program, programSize, queueReader, queueWriter));
+    TEST_ASSERT_EQUAL_INT(20, 20);
+}
 
 //109,1,204,-1,1001,100,1,100,1008,100,16,101,1006,101,0,99 takes no input and produces a copy of itself as output.
 void day9ProgramShouldProduceCopyOfItselfAsOutput() {
     int programSize = 16;
     int program[] = {109,1,204,-1,1001,100,1,100,1008,100,16,101,1006,101,0,99};
-    executeProgram(setContext(program, programSize, queueReader, queueWriter));
+    executeProgram(initializeContext(program, programSize, queueReader, queueWriter));
     //check size of output collection
     TEST_ASSERT_EQUAL_INT(programSize, sizeQueue(outputQueue));
     //make sure every int in the collection is the same

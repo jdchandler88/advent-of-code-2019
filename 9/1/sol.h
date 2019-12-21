@@ -12,12 +12,14 @@ typedef enum OpCode {
   JUMP_IF_FALSE = 6, 
   LESS_THAN = 7,
   EQUALS = 8,
+  ADJUST_RELATIVE_BASE = 9,
   HALT = 99
 } OpCode;
 
 typedef enum AddressingMode {
   INDIRECT = 0,
-  DIRECT = 1
+  DIRECT = 1,
+  RELATIVE = 2
 } AddressingMode;
 
 /**
@@ -56,6 +58,8 @@ typedef struct ProgramContext {
     int id;
     int* program;
     int programLength;
+    int programCounter;
+    int relativeBase;
     InputReader* reader;
     OutputWriter* writer;
 } ProgramContext;
@@ -69,6 +73,7 @@ const static int JUMP_IF_FALSE_PARAMS = 2;
 const static int LESS_THAN_PARAMS = 3;
 const static int EQUAL_PARAMS = 3;
 const static int HALT_PARAMS = 0;
+const static int ADJUST_RELATIVE_BASE_PARAMS = 1;
 
 /**
  * Each instruction consists of an opcode and a list of parameters.
@@ -86,4 +91,4 @@ int chainProgram(int numChains, bool feedbackMode, const char** inputs, int inpu
 
 void executeProgram(struct ProgramContext* context);
 
-void executeInstruction(int* program, int* programCounter, struct ProgramContext* ctx);
+void executeInstruction(struct ProgramContext* ctx);
