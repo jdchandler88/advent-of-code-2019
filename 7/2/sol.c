@@ -265,7 +265,7 @@ typedef struct QueueContext {
 const char* readQueue(void* context) {
     struct QueueContext* ctx = (QueueContext*)context;
     char* input = malloc(100*sizeof(char));
-    sprintf(input, "%i", popQueue(ctx->queue));
+    sprintf(input, "%i", queue_dequeue(ctx->queue).element.i);
     return input;
 }
 
@@ -274,7 +274,8 @@ const char* readQueue(void* context) {
 void writeQueue(int output, void* context) {
     struct QueueContext* ctx = (QueueContext*)context;
     //put data in queue and notify wait condition just in case other threads are waiting for input
-    pushQueue(ctx->queue, output);
+    struct QueueElement outputElement = {INT, {.i=output}};
+    queue_enqueue(ctx->queue, outputElement);
 }
 
 /**
@@ -288,7 +289,7 @@ int chainProgram(int numChains, bool feedbackMode, const char** inputs, int inpu
     for (int i=0; i<numChains; i++) {
         struct QueueContext* ctx = malloc(sizeof(QueueContext));
         ctx->id = i;
-        ctx->queue = createQueue();
+        ctx->queue = queue_create();
         ctxs[i] = ctx;
 
         //initialize inputs for each component. each component reads input from the previous, so set the queues up that way
@@ -343,7 +344,7 @@ int chainProgram(int numChains, bool feedbackMode, const char** inputs, int inpu
     }
 
     //output the last output in the chain.
-    int value = popQueue(ctxs[numChains-1]->queue);
+    int value = queue_dequeue(ctxs[numChains-1]->queue).element.i;
     writer->writer(value, writer->writerContext);
 
     // free((void*)programCopyStorage);

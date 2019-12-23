@@ -73,39 +73,51 @@ void parseParsesSpacesAndCommas() {
 }
 
 void queueSizeShouldBeZeroAfterCreation() {
-    struct Queue* queue = createQueue();
-    TEST_ASSERT_EQUAL_INT(0, sizeQueue(queue));
-    destroyQueue(queue);
+    struct Queue* queue = queue_create();
+    TEST_ASSERT_EQUAL_INT(0, queue_size(queue));
+    queue_destroy(queue);
 }
 
 void queueSizeShouldBeOneAfterOneInsertion() {
-    struct Queue* queue = createQueue();
-    pushQueue(queue, 1);
-    TEST_ASSERT_EQUAL_INT(1, sizeQueue(queue));
-    destroyQueue(queue);
+    struct Queue* queue = queue_create();
+    struct QueueElement value = {INT, 1};
+    queue_enqueue(queue, value);
+    TEST_ASSERT_EQUAL_INT(1, queue_size(queue));
+    queue_destroy(queue);
 }
 
 void queueValueShouldBeOneAfterOneAdd() {
-    struct Queue* queue = createQueue();
-    pushQueue(queue, 1);
-    TEST_ASSERT_EQUAL_INT(1, popQueue(queue));
-    destroyQueue(queue);
+    struct Queue* queue = queue_create();
+    struct QueueElement value = {INT, 1};
+    queue_enqueue(queue, value);
+    TEST_ASSERT_EQUAL_INT(1, queue_dequeue(queue).element.i);
+    queue_destroy(queue);
+}
+
+void queueCanHandleIntInDay7Part1() {
+    struct Queue* queue = queue_create();
+    struct QueueElement value = {INT, {.i=139629729}};
+    queue_enqueue(queue, value);
+    struct QueueElement outputValue = queue_dequeue(queue);
+    TEST_ASSERT_EQUAL_INT(value.element.i, outputValue.element.i);
+    queue_destroy(queue);
 }
 
 void queueShouldBehaveAppropriatelyDuringManyAdds() {
     int numTests = 1000;
-    struct Queue* queue = createQueue();
+    struct Queue* queue = queue_create();
     for (int i=0; i<numTests; i++) {
-        pushQueue(queue, i);
-        TEST_ASSERT_EQUAL_INT(i+1, sizeQueue(queue));
+        struct QueueElement value = {INT, i};
+        queue_enqueue(queue, value);
+        TEST_ASSERT_EQUAL_INT(i+1, queue_size(queue));
     }
 
-    TEST_ASSERT_EQUAL_INT(numTests, sizeQueue(queue));
+    TEST_ASSERT_EQUAL_INT(numTests, queue_size(queue));
 
     for (int i=0; i<numTests; i++) {
-        int value = popQueue(queue);
+        int value = queue_dequeue(queue).element.i;
         TEST_ASSERT_EQUAL_INT(i, value);
-        TEST_ASSERT_EQUAL_INT(numTests-i-1, sizeQueue(queue));
+        TEST_ASSERT_EQUAL_INT(numTests-i-1, queue_size(queue));
     }
 }
 
@@ -123,6 +135,8 @@ int main(void) {
     RUN_TEST(queueSizeShouldBeZeroAfterCreation);
     RUN_TEST(queueSizeShouldBeOneAfterOneInsertion);
     RUN_TEST(queueValueShouldBeOneAfterOneAdd);
+    RUN_TEST(queueCanHandleIntInDay7Part1);
     RUN_TEST(queueShouldBehaveAppropriatelyDuringManyAdds);
+    printf("max int = %i\n",INT_MAX);
     return UNITY_END();
 }

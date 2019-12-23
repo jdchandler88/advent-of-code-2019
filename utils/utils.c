@@ -80,7 +80,7 @@ struct Queue {
   int id;
   pthread_mutex_t mutex;
   pthread_cond_t cond;
-  int* queue;
+  struct QueueElement* queue;
   int numQueued;
   int maxQueueSize;
 };
@@ -88,37 +88,38 @@ struct Queue {
 static const int QUEUE_GROWTH_SIZE=10;
 static int idCounter = 0;
 
-struct Queue* createQueue() {
+struct Queue* queue_create() {
     struct Queue* queue = malloc(sizeof(struct Queue));
     queue->id = idCounter++;
     pthread_mutex_init(&queue->mutex, NULL);
     pthread_cond_init(&queue->cond, NULL);
     queue->numQueued = 0;
     queue->maxQueueSize = QUEUE_GROWTH_SIZE;
-    queue->queue = malloc(queue->maxQueueSize*sizeof(int));
+    queue->queue = malloc(queue->maxQueueSize*sizeof(QueueElement));
     return queue;    
 }
 
-void destroyQueue(struct Queue* queue) {
+void queue_destroy(struct Queue* queue) {
     pthread_mutex_destroy(&queue->mutex);
     pthread_cond_destroy(&queue->cond);
     free(queue->queue);
     free(queue);
 }
 
-void pushQueue(struct Queue* queue, int value) {
+void queue_enqueue(struct Queue* queue, struct QueueElement value) {
     pthread_mutex_lock(&queue->mutex);
     //is there enough room? if so, add it. if not, reize it
     if (queue->maxQueueSize == queue->numQueued) {
         increaseQueueSize(queue, QUEUE_GROWTH_SIZE);
     }
-    queue->queue[queue->numQueued] = value;
+    //copy value into queue memory
+    memcpy(&queue->queue[queue->numQueued], &value, sizeof(QueueElement));
     queue->numQueued++;
     pthread_cond_signal(&queue->cond);
     pthread_mutex_unlock(&queue->mutex);
 }
 
-int popQueue(struct Queue* queue) {
+struct QueueElement queue_dequeue(struct Queue* queue) {
     pthread_mutex_lock(&queue->mutex);
     //is there anything in the queue? if so, then get it. if not, then suspend until there is something available.
     if (queue->numQueued == 0) {
@@ -126,7 +127,8 @@ int popQueue(struct Queue* queue) {
         pthread_cond_wait(&queue->cond, &queue->mutex);
     } 
     queue->numQueued--;
-    int value=queue->queue[0];
+    //get value, copy it for return, and free the original value
+    struct QueueElement value=queue->queue[0];
     //shift values up (a more sophisticated implementation would use a circular pointer or something...)
     for (int i=0; i<queue->numQueued; i++) {
         queue->queue[i] = queue->queue[i+1];
@@ -135,7 +137,7 @@ int popQueue(struct Queue* queue) {
     return value;
 }
 
-int sizeQueue(struct Queue* queue) {
+int queue_size(struct Queue* queue) {
     pthread_mutex_lock(&queue->mutex);
     int value = queue->numQueued;
     pthread_mutex_unlock(&queue->mutex);
@@ -144,5 +146,5 @@ int sizeQueue(struct Queue* queue) {
 
 static int increaseQueueSize(struct Queue* queue, int growthSize) {
     queue->maxQueueSize+=growthSize;
-    queue->queue = realloc(queue->queue, queue->maxQueueSize*sizeof(int));
+    queue->queue = realloc(queue->queue, queue->maxQueueSize*sizeof(QueueElement));
 }

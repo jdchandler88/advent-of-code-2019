@@ -30,14 +30,40 @@ void freeLinkedList(void* node, void* (*next)(void*));
 
 typedef struct Queue Queue;
 
-struct Queue* createQueue();
+/**
+ * Allows storing of "any" type in queue
+ **/
+typedef struct QueueElement {
+    enum ElementType {
+        SHORT,
+        INT,
+        LONG,
+        LONG_LONG,
+        FLOAT,
+        DOUBLE,
+        // LONG_DOUBLE, //got this note from my compiler: note: the ABI of passing union with long double has changed in GCC 4.4
+        VOIDP
+    } elementType;
+    union Element {
+        short s;
+        int i;
+        long l;
+        long long ll;
+        float f;
+        double d;
+        // long double ld;
+        void* anyPointer;
+    } element;
+} QueueElement;
 
-void destroyQueue(struct Queue* queue);
+struct Queue* queue_create();
 
-void pushQueue(struct Queue* queue, int value);
+void queue_destroy(struct Queue* queue);
 
-int popQueue(struct Queue* queue);
+void queue_enqueue(struct Queue* queue, struct QueueElement queueElement);
 
-int sizeQueue(struct Queue* queue);
+struct QueueElement queue_dequeue(struct Queue* queue);
+
+int queue_size(struct Queue* queue);
 
 static int increaseQueueSize(struct Queue* queue, int growthSize);

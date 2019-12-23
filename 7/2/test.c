@@ -444,6 +444,7 @@ void testWeActuallyGet139629729AsMaxOutputParallel() {
     const char* inputs[] = {"4", "3", "2", "1", "0"};
     //5 amps, parallel mode, offset 5
     int result = decodeAmplifiers(5, 1, 5, program, programSize, standardReader, standardWriter);
+    int x = 139629729;
     TEST_ASSERT_EQUAL_INT(139629729, result);
 }
 

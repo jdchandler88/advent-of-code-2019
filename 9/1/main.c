@@ -18,8 +18,8 @@ const char* readInput(void* arg) {
     return line;
 }
 
-void writeOutput(int output, void* arg) {
-    printf("This is the program output: %i\n", output);
+void writeOutput(program_t output, void* arg) {
+    printf("This is the program output: %ld\n", output);
 }
 
 static void programStringCallback(const char* programString) {
@@ -27,7 +27,7 @@ static void programStringCallback(const char* programString) {
     int programSize;
     const char** parsedProgram = parseString(programString, ",", &programSize);
     //convert to integers and delete character storage
-    int* program = malloc(programSize*sizeof(int));
+    program_t* program = malloc(programSize*sizeof(program_t));
     for (int i=0; i<programSize; i++) {
         program[i] = atoi(parsedProgram[i]);
         free((void*)parsedProgram[i]);

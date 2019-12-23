@@ -23,6 +23,12 @@ typedef enum AddressingMode {
 } AddressingMode;
 
 /**
+ * got effed not typedeffing a type for the program. it is called IntCode after all. Oh well, 
+ * live and learn
+ **/ 
+typedef long program_t;
+
+/**
  * implementing parameters as linked list. Doing this becuase we don't know
  * how many there will be at runtime. it's easy to iterate and clean up, too.
  */
@@ -47,7 +53,7 @@ typedef struct InputReader {
  * Also added on day7 part 2. Same reasoning as above.
  */ 
 typedef struct OutputWriter {
-  void (*writer)(int, void*);
+  void (*writer)(program_t, void*);
   void* writerContext;
 } OutputWriter;
 
@@ -56,7 +62,7 @@ typedef struct OutputWriter {
  **/
 typedef struct ProgramContext {
     int id;
-    int* program;
+    program_t* program;
     int programLength;
     int programCounter;
     int relativeBase;
@@ -83,11 +89,11 @@ typedef struct Instruction {
   struct Parameter* parameter;
 } Instruction;
 
-struct Instruction* parseInstruction(int instructionString);
+struct Instruction* parseInstruction(program_t instructionString);
 
-int decodeAmplifiers(int numAmplifiers, bool feedbackMode, int inputOffset, int* program, int programlength, InputReader* reader, OutputWriter* writer);
+int decodeAmplifiers(int numAmplifiers, bool feedbackMode, int inputOffset, program_t* program, int programlength, InputReader* reader, OutputWriter* writer);
 
-int chainProgram(int numChains, bool feedbackMode, const char** inputs, int inputOffset, int* program, int ProgramLength, InputReader* reader, OutputWriter* writer);
+int chainProgram(int numChains, bool feedbackMode, const char** inputs, int inputOffset, program_t* program, int ProgramLength, InputReader* reader, OutputWriter* writer);
 
 void executeProgram(struct ProgramContext* context);
 

@@ -6,67 +6,88 @@
 #include <string.h>
 #include <stdbool.h>
 
-int getValueFromMemoryAndIncrementProgramCounter(enum AddressingMode mode, struct ProgramContext* ctx) {
+program_t getValueFromMemoryAndIncrementProgramCounter(enum AddressingMode mode, struct ProgramContext* ctx) {
     //local variables to make typing easier...
     int* programCounter = &ctx->programCounter;
-    int* program = ctx->program;
-
-    int memoryElement = program[(*programCounter)++];
-    int value = mode == DIRECT ? memoryElement : program[memoryElement];
+    program_t* program = ctx->program;
+    program_t memoryElement = program[(*programCounter)++];
+    program_t value;
+    switch (mode) {
+        case DIRECT:
+            value = memoryElement;
+            break;
+        case INDIRECT:
+            value = program[memoryElement];
+            break;
+        case RELATIVE:
+            value = program[ctx->relativeBase + memoryElement];
+            break;
+    }
     return value;
+}
+
+void storeResultInMemoryAndIncrementProgramCounter(program_t value, enum AddressingMode mode, struct ProgramContext* ctx) {
+    //local variables to make typing easier...
+    int* programCounter = &ctx->programCounter;
+    program_t* program = ctx->program;
+    program_t location = program[(*programCounter)++];
+    switch (mode) {
+        case DIRECT:
+            //does this ever happen? does it even make sense?
+            break;
+        case INDIRECT:
+            program[location] = value;
+            break;
+        case RELATIVE:
+            program[ctx->relativeBase + location] = value;
+            break;
+    }
 }
 
 static void handleAdd(struct Instruction* instruction, struct ProgramContext* ctx) {
     //local variables to make typing easier...
     int* programCounter = &ctx->programCounter;
-    int* program = ctx->program;
+    program_t* program = ctx->program;
 
     (*programCounter)++;
-    int addend1 = getValueFromMemoryAndIncrementProgramCounter(instruction->parameter->mode, ctx);
-    int addend2 = getValueFromMemoryAndIncrementProgramCounter(instruction->parameter->next->mode, ctx);
-    int storeLocation = program[(*programCounter)++];
-
-    int result = addend1 + addend2;
+    program_t addend1 = getValueFromMemoryAndIncrementProgramCounter(instruction->parameter->mode, ctx);
+    program_t addend2 = getValueFromMemoryAndIncrementProgramCounter(instruction->parameter->next->mode, ctx);
+    program_t storeLocation = program[(*programCounter)++];
+    program_t result = addend1 + addend2;
     program[storeLocation] = result;
 };
 
 static void handleMultiply(struct Instruction* instruction, struct ProgramContext* ctx) {
     //local variables to make typing easier...
     int* programCounter = &ctx->programCounter;
-    int* program = ctx->program;
+    program_t* program = ctx->program;
     
     (*programCounter)++;
-    int addend1 = getValueFromMemoryAndIncrementProgramCounter(instruction->parameter->mode, ctx);
-    int addend2 = getValueFromMemoryAndIncrementProgramCounter(instruction->parameter->next->mode, ctx);
-    int storeLocation = program[(*programCounter)++];
-
-    int result = addend1 * addend2;
+    program_t addend1 = getValueFromMemoryAndIncrementProgramCounter(instruction->parameter->mode, ctx);
+    program_t addend2 = getValueFromMemoryAndIncrementProgramCounter(instruction->parameter->next->mode, ctx);
+    program_t storeLocation = program[(*programCounter)++];
+    program_t result = addend1 * addend2;
     program[storeLocation] = result;
 }
 
 static void handleInput(struct Instruction* instruction, struct ProgramContext* ctx) {
     //local variables to make typing easier...
     int* programCounter = &ctx->programCounter;
-    int* program = ctx->program;
-    
+    program_t* program = ctx->program;
     (*programCounter)++;
-    //read input from somewhere
-    int storeLocation = program[(*programCounter)++];
-    
     const char* inputString = ctx->reader->reader(ctx->reader->readerContext);
-    int input = atoi(inputString);
-    //store input at location specified by program
-    program[storeLocation] = input;
+    program_t input = atoi(inputString);
+    storeResultInMemoryAndIncrementProgramCounter(input, instruction->parameter->mode, ctx);
 }
 
 static void handleOutput(struct Instruction* instruction, struct ProgramContext* ctx) {
     //local variables to make typing easier...
     int* programCounter = &ctx->programCounter;
-    int* program = ctx->program;
+    program_t* program = ctx->program;
 
     (*programCounter)++;
     //get value to output
-    int output = getValueFromMemoryAndIncrementProgramCounter(instruction->parameter->mode, ctx);
+    program_t output = getValueFromMemoryAndIncrementProgramCounter(instruction->parameter->mode, ctx);
     //write it to somewhere
     ctx->writer->writer(output, ctx->writer->writerContext);
 }
@@ -74,11 +95,11 @@ static void handleOutput(struct Instruction* instruction, struct ProgramContext*
 static void handleJumpIfTrue(struct Instruction* instruction, struct ProgramContext* ctx) {
     //local variables to make typing easier...
     int* programCounter = &ctx->programCounter;
-    int* program = ctx->program;
+    program_t* program = ctx->program;
 
     (*programCounter)++;
-    int value1 = getValueFromMemoryAndIncrementProgramCounter(instruction->parameter->mode, ctx);
-    int jumpLocation = getValueFromMemoryAndIncrementProgramCounter(instruction->parameter->next->mode, ctx);
+    program_t value1 = getValueFromMemoryAndIncrementProgramCounter(instruction->parameter->mode, ctx);
+    program_t jumpLocation = getValueFromMemoryAndIncrementProgramCounter(instruction->parameter->next->mode, ctx);
     if (value1!=0) {
         *programCounter = jumpLocation;
     }
@@ -87,11 +108,11 @@ static void handleJumpIfTrue(struct Instruction* instruction, struct ProgramCont
 static void handleJumpIfFalse(struct Instruction* instruction, struct ProgramContext* ctx) {
     //local variables to make typing easier...
     int* programCounter = &ctx->programCounter;
-    int* program = ctx->program;
+    program_t* program = ctx->program;
     
     (*programCounter)++;
-    int value1 = getValueFromMemoryAndIncrementProgramCounter(instruction->parameter->mode, ctx);
-    int jumpLocation = getValueFromMemoryAndIncrementProgramCounter(instruction->parameter->next->mode, ctx);
+    program_t value1 = getValueFromMemoryAndIncrementProgramCounter(instruction->parameter->mode, ctx);
+    program_t jumpLocation = getValueFromMemoryAndIncrementProgramCounter(instruction->parameter->next->mode, ctx);
     if (value1==0) {
         *programCounter = jumpLocation;
     }
@@ -100,34 +121,34 @@ static void handleJumpIfFalse(struct Instruction* instruction, struct ProgramCon
 static void handleLessThan(struct Instruction* instruction, struct ProgramContext* ctx) {
     //local variables to make typing easier...
     int* programCounter = &ctx->programCounter;
-    int* program = ctx->program;
+    program_t* program = ctx->program;
 
     (*programCounter)++;
-    int value1 = getValueFromMemoryAndIncrementProgramCounter(instruction->parameter->mode, ctx);
-    int value2 = getValueFromMemoryAndIncrementProgramCounter(instruction->parameter->next->mode, ctx);
-    int storeLocation = program[(*programCounter)++];
+    program_t value1 = getValueFromMemoryAndIncrementProgramCounter(instruction->parameter->mode, ctx);
+    program_t value2 = getValueFromMemoryAndIncrementProgramCounter(instruction->parameter->next->mode, ctx);
+    program_t storeLocation = program[(*programCounter)++];
     program[storeLocation] = (value1<value2);
 }
 
 static void handleEquals(struct Instruction* instruction, struct ProgramContext* ctx) {
     //local variables to make typing easier...
     int* programCounter = &ctx->programCounter;
-    int* program = ctx->program;
+    program_t* program = ctx->program;
 
     (*programCounter)++;
-    int value1 = getValueFromMemoryAndIncrementProgramCounter(instruction->parameter->mode, ctx);
-    int value2 = getValueFromMemoryAndIncrementProgramCounter(instruction->parameter->next->mode, ctx);
-    int storeLocation = program[(*programCounter)++];
+    program_t value1 = getValueFromMemoryAndIncrementProgramCounter(instruction->parameter->mode, ctx);
+    program_t value2 = getValueFromMemoryAndIncrementProgramCounter(instruction->parameter->next->mode, ctx);
+    program_t storeLocation = program[(*programCounter)++];
     program[storeLocation] = (value1==value2);
 }
 
 static void handleAdjustRelativeBase(struct Instruction* instruction, struct ProgramContext* ctx) {
     //local variables to make typing easier...
     int* programCounter = &ctx->programCounter;
-    int* program = ctx->program;
+    program_t* program = ctx->program;
 
     (*programCounter)++;
-    int adjustValue = getValueFromMemoryAndIncrementProgramCounter(instruction->parameter->mode, ctx);
+    program_t adjustValue = getValueFromMemoryAndIncrementProgramCounter(instruction->parameter->mode, ctx);
     ctx->relativeBase += adjustValue;
 }
 
@@ -153,6 +174,9 @@ static int getNumberOfParams(enum OpCode opcode) {
             return HALT_PARAMS;
         case ADJUST_RELATIVE_BASE: 
             return ADJUST_RELATIVE_BASE_PARAMS;
+        default:
+            printf("unexpected opcode in parse. quitting.\n");
+            exit(1);
     }
 }
 
@@ -171,23 +195,24 @@ The algorithm here is: mod by an order of magnitude higher than the information 
 For instance: i want the 10s/1s place. Mod the int by 100 and that gives me the 10s/1s place.
 For the next slot (100s), mod by the next order of magnitude, 1000. And so it goes...
 */                                
-struct Instruction* parseInstruction(int instructionInt) {
-    int intMask = 100;
-    int tmp = instructionInt%intMask;
-    int opcode = tmp;
+struct Instruction* parseInstruction(program_t instructionInt) {
+    program_t intMask = 100;
+    program_t tmp = instructionInt%intMask;
+    program_t opcode = tmp;
     instructionInt-=opcode;
     intMask*=10;    //incrase mask for next base10 place0
 
     struct Instruction* instruction = malloc(sizeof(struct Instruction));
     instruction->opcode = opcode;
     instruction->parameter = NULL;
-
+     
     //storage for parameter list
     int numParams = getNumberOfParams(opcode);
     struct Parameter* currentParameter = NULL;
     for (int i=0; i<numParams; i++) {
         tmp = instructionInt%intMask;
-        int mode = tmp > 0;
+        
+        int mode = tmp/(intMask/10);
         instructionInt-=tmp;
         intMask*=10;
         //create storage for mode indicator
@@ -206,12 +231,12 @@ struct Instruction* parseInstruction(int instructionInt) {
     return instruction;
 }
 
-static void printIntArray(int* arr, int size) {
+static void printIntArray(program_t* arr, int size) {
     for (int i=0; i<size; i++) {
         if (i==0) {
             printf("[");
         }
-        printf("%i", arr[i]);
+        printf("%ld", arr[i]);
         if (i!=size-1) {
             printf(", ");
         } else {
@@ -225,7 +250,7 @@ void executeProgram(struct ProgramContext* context) {
     while (context->program[context->programCounter] != HALT) {
         executeInstruction(context);
     }
-    // printf("result = ");
+    // printf("executed program. result = ");
     // printIntArray(context->program, context->programLength);
 }
 
@@ -274,8 +299,8 @@ void executeInstruction(struct ProgramContext* ctx) {
     free(instruction);
 }
 
-static void copyProgram(int* storageLocation, int* program, int programLength) {
-   memcpy(storageLocation, program, programLength * sizeof(int));
+static void copyProgram(program_t* storageLocation, program_t* program, int programLength) {
+   memcpy(storageLocation, program, programLength * sizeof(program_t));
 }
 
 typedef struct QueueContext {
@@ -288,22 +313,28 @@ typedef struct QueueContext {
 const char* readQueue(void* context) {
     struct QueueContext* ctx = (QueueContext*)context;
     char* input = malloc(100*sizeof(char));
-    sprintf(input, "%i", popQueue(ctx->queue));
+    void* queueValue = queue_dequeue(ctx->queue).element.anyPointer;
+    program_t value = *((program_t*)queueValue);
+    sprintf(input, "%ld", value);
     return input;
 }
 
 //writes to queue in thread-safe manner.
 //this also notifies a wait condition in case another thread is waiting
-void writeQueue(int output, void* context) {
+void writeQueue(program_t output, void* context) {
     struct QueueContext* ctx = (QueueContext*)context;
+    //create storage for program_t, copy it to pointer, and then use that pointer for queue output
+    void* outputForQueue = malloc(sizeof(program_t));
+    memcpy(outputForQueue, &output, sizeof(program_t));
+    struct QueueElement outputElement = {VOIDP, {.anyPointer=outputForQueue}};
     //put data in queue and notify wait condition just in case other threads are waiting for input
-    pushQueue(ctx->queue, output);
+    queue_enqueue(ctx->queue, outputElement);
 }
 
 /**
  * This function chains programs together. Specifically, output from one is fed to input for two, etc.
  */ 
-int chainProgram(int numChains, bool feedbackMode, const char** inputs, int inputOffset, int* program, int programLength, InputReader* reader, OutputWriter* writer) {
+int chainProgram(int numChains, bool feedbackMode, const char** inputs, int inputOffset, program_t* program, int programLength, InputReader* reader, OutputWriter* writer) {
     bool sequentialNotParallel = !feedbackMode;  //if true, then execute programs sequentially. otherwise, execute them in parallel
 
     //queues for communication between units
@@ -311,7 +342,7 @@ int chainProgram(int numChains, bool feedbackMode, const char** inputs, int inpu
     for (int i=0; i<numChains; i++) {
         struct QueueContext* ctx = malloc(sizeof(QueueContext));
         ctx->id = i;
-        ctx->queue = createQueue();
+        ctx->queue = queue_create();
         ctxs[i] = ctx;
 
         //initialize inputs for each component. each component reads input from the previous, so set the queues up that way
@@ -337,7 +368,7 @@ int chainProgram(int numChains, bool feedbackMode, const char** inputs, int inpu
         struct ProgramContext* programContext = malloc(sizeof(ProgramContext));
 
         //make copy of program and store in context
-        int* programCopy = malloc(programLength*sizeof(int));
+        program_t* programCopy = calloc(programLength + 1000, sizeof(program_t));
         copyProgram(programCopy, program, programLength);
         programContext->id = i;
         programContext->programCounter = 0;
@@ -349,7 +380,6 @@ int chainProgram(int numChains, bool feedbackMode, const char** inputs, int inpu
         programContext->writer = malloc(sizeof(OutputWriter));
         programContext->writer->writer = writeQueue;
         programContext->writer->writerContext= ctxs[i];    //always write to the queue ot which the unit is assigned (the one in front of the unit);
-
         //execute program in another thread
         pthread_create(&threads[i], NULL, (void* (*)(void*))executeProgram, programContext);
 
@@ -367,7 +397,7 @@ int chainProgram(int numChains, bool feedbackMode, const char** inputs, int inpu
     }
 
     //output the last output in the chain.
-    int value = popQueue(ctxs[numChains-1]->queue);
+    program_t value = *(program_t*)queue_dequeue(ctxs[numChains-1]->queue).element.anyPointer;
     writer->writer(value, writer->writerContext);
 
     // free((void*)programCopyStorage);
@@ -375,7 +405,7 @@ int chainProgram(int numChains, bool feedbackMode, const char** inputs, int inpu
     return value;
 }
 
-int decodeAmplifiers(int numAmplifiers, bool feedbackMode, int inputOffset, int* program, int programlength, InputReader* reader, OutputWriter* writer) {
+int decodeAmplifiers(int numAmplifiers, bool feedbackMode, int inputOffset, program_t* program, int programlength, InputReader* reader, OutputWriter* writer) {
 
     //will do this dynamically. just in case there are a different number of amplifiers in the future. also, i want to 
     //fiure out how to do this generically.
