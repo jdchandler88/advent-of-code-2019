@@ -2,24 +2,32 @@
 #include "utils.h"
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
-int numAmps;
+int input;
 
-int feedbackMode = false;
+char inputBuffer[100];
 
-int inputOffset = 0;
+struct Queue* inputQueue;
+
+struct Queue* outputQueue;
 
 const char* readInput(void* arg) {
-    printf("Please enter your input...\n");
-    char * line = NULL;
-    size_t len = 0;
-    size_t read;
-    getline(&line, &len, stdin);
-    return line;
+    struct Queue* queue = (Queue*)arg;
+    program_t value = *((program_t*)queue_dequeue(queue).element.anyPointer);
+    sprintf(inputBuffer, "%ld", value);
+    return inputBuffer;
 }
 
 void writeOutput(program_t output, void* arg) {
-    printf("This is the program output: %ld\n", output);
+    struct Queue* queue = (Queue*)arg;
+    //create storage and copy value into it
+    void* outputPointer = malloc(sizeof(program_t));
+    memcpy(outputPointer, &output, sizeof(program_t));
+    //now that value is copied, push it into the queue
+    struct QueueElement outputElement = {VOIDP, {.anyPointer=outputPointer}};
+    queue_enqueue(queue, outputElement);
+    printf("output: %ld\n", output);
 }
 
 static void programStringCallback(const char* programString) {
@@ -36,36 +44,39 @@ static void programStringCallback(const char* programString) {
     //do the program
     InputReader reader;
     reader.reader = readInput;
-    reader.readerContext = NULL;
+    reader.readerContext = inputQueue;
     OutputWriter writer;
     writer.writer = writeOutput;
-    writer.writerContext = NULL;
-    decodeAmplifiers(numAmps, feedbackMode, inputOffset, program, programSize, &reader, &writer);
+    writer.writerContext = outputQueue;
+
+
+    struct ProgramContext* ctx = createContext(0, program, programSize, &reader, &writer);
+    executeProgram(ctx);
     //free the program storage
     free((void*)program);
 }
 
 int main(int argc, char** argv) {
-    if (argc !=5) {
+    if (argc != 3) {
         printf("gimme an input file, number of amplifiers we're decoding, feedbackMode, inputOffset. For example './exe input.txt 5 1 0'\n");
         printf("\tinputFile should be a string pointing to a file\n");
-        printf("\tnumAmps should be an integer indicating the number of systems running the program\n");
-        printf("\tfeedbackMode should be 0 or 1. If '0', then feedback mode is OFF and programs are chained sequentially. If '1' then feedback mode is on and programs are executed in parallel and connected in a feedback loop\n");
-        printf("\tinputOffset should be an integer >= 0. This program generates permutations of inputs for the amps, 0 indexed. 'inputOffset' is added to the generated permutations'\n");
+        printf("\tinput. this is used to pass to the BOOST program\n");
         exit(0);
     }
     FILE* file = fopen(argv[1], "r");
-    numAmps = atoi(argv[2]);
-    feedbackMode = atoi(argv[3]);
-    if (!(feedbackMode == 0 || feedbackMode == 1)) {
-        printf("feedbackMode should be '0' or '1'. We received %i\n", feedbackMode);
-        exit(1);
-    }
-    inputOffset = atoi(argv[4]);
-    if (inputOffset < 0) {
-        printf("inputOffset should be integer >= 0. We received %i\n", inputOffset);
-        exit(1);
-    }
+    input = atoi(argv[2]);
+
+    //set up io
+    inputQueue = queue_create();
+    outputQueue = queue_create();
+
+    //push input into input quuee
+    void* outputPointer = malloc(sizeof(program_t));
+    memcpy(outputPointer, &input, sizeof(program_t));
+    //now that value is copied, push it into the queue
+    struct QueueElement outputElement = {VOIDP, {.anyPointer=outputPointer}};
+    queue_enqueue(inputQueue, outputElement);
+
     readLines(file, programStringCallback);
     fclose(file);
 }

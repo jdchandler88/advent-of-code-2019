@@ -52,9 +52,8 @@ static void handleAdd(struct Instruction* instruction, struct ProgramContext* ct
     (*programCounter)++;
     program_t addend1 = getValueFromMemoryAndIncrementProgramCounter(instruction->parameter->mode, ctx);
     program_t addend2 = getValueFromMemoryAndIncrementProgramCounter(instruction->parameter->next->mode, ctx);
-    program_t storeLocation = program[(*programCounter)++];
     program_t result = addend1 + addend2;
-    program[storeLocation] = result;
+    storeResultInMemoryAndIncrementProgramCounter(result, instruction->parameter->next->next->mode, ctx);
 };
 
 static void handleMultiply(struct Instruction* instruction, struct ProgramContext* ctx) {
@@ -65,9 +64,8 @@ static void handleMultiply(struct Instruction* instruction, struct ProgramContex
     (*programCounter)++;
     program_t addend1 = getValueFromMemoryAndIncrementProgramCounter(instruction->parameter->mode, ctx);
     program_t addend2 = getValueFromMemoryAndIncrementProgramCounter(instruction->parameter->next->mode, ctx);
-    program_t storeLocation = program[(*programCounter)++];
     program_t result = addend1 * addend2;
-    program[storeLocation] = result;
+    storeResultInMemoryAndIncrementProgramCounter(result, instruction->parameter->next->next->mode, ctx);
 }
 
 static void handleInput(struct Instruction* instruction, struct ProgramContext* ctx) {
@@ -126,8 +124,7 @@ static void handleLessThan(struct Instruction* instruction, struct ProgramContex
     (*programCounter)++;
     program_t value1 = getValueFromMemoryAndIncrementProgramCounter(instruction->parameter->mode, ctx);
     program_t value2 = getValueFromMemoryAndIncrementProgramCounter(instruction->parameter->next->mode, ctx);
-    program_t storeLocation = program[(*programCounter)++];
-    program[storeLocation] = (value1<value2);
+    storeResultInMemoryAndIncrementProgramCounter(value1<value2, instruction->parameter->next->next->mode, ctx);
 }
 
 static void handleEquals(struct Instruction* instruction, struct ProgramContext* ctx) {
@@ -138,8 +135,7 @@ static void handleEquals(struct Instruction* instruction, struct ProgramContext*
     (*programCounter)++;
     program_t value1 = getValueFromMemoryAndIncrementProgramCounter(instruction->parameter->mode, ctx);
     program_t value2 = getValueFromMemoryAndIncrementProgramCounter(instruction->parameter->next->mode, ctx);
-    program_t storeLocation = program[(*programCounter)++];
-    program[storeLocation] = (value1==value2);
+    storeResultInMemoryAndIncrementProgramCounter(value1==value2, instruction->parameter->next->next->mode, ctx);
 }
 
 static void handleAdjustRelativeBase(struct Instruction* instruction, struct ProgramContext* ctx) {
@@ -365,22 +361,14 @@ int chainProgram(int numChains, bool feedbackMode, const char** inputs, int inpu
     //there are #units queues
     for (int i=0; i<numChains; i++) {
         //create program context
-        struct ProgramContext* programContext = malloc(sizeof(ProgramContext));
+        struct InputReader* reader = malloc(sizeof(InputReader));
+        reader->reader = readQueue;
+        reader->readerContext = (i==0) ? ctxs[numChains-1] : ctxs[i-1]; //if this is the first unit, read from *the last queue*; this is the queue to which the last unit writes. otherwise, read from the one previous
+        struct OutputWriter* writer = malloc(sizeof(OutputWriter));
+        writer->writer = writeQueue;
+        writer->writerContext= ctxs[i];    //always write to the queue ot which the unit is assigned (the one in front of the unit);
+        struct ProgramContext* programContext = createContext(i, program, programLength, reader, writer);
 
-        //make copy of program and store in context
-        program_t* programCopy = calloc(programLength + 1000, sizeof(program_t));
-        copyProgram(programCopy, program, programLength);
-        programContext->id = i;
-        programContext->programCounter = 0;
-        programContext->program = programCopy;
-        programContext->programLength = programLength;
-        programContext->reader = malloc(sizeof(InputReader));
-        programContext->reader->reader = readQueue;
-        programContext->reader->readerContext = (i==0) ? ctxs[numChains-1] : ctxs[i-1]; //if this is the first unit, read from *the last queue*; this is the queue to which the last unit writes. otherwise, read from the one previous
-        programContext->writer = malloc(sizeof(OutputWriter));
-        programContext->writer->writer = writeQueue;
-        programContext->writer->writerContext= ctxs[i];    //always write to the queue ot which the unit is assigned (the one in front of the unit);
-        //execute program in another thread
         pthread_create(&threads[i], NULL, (void* (*)(void*))executeProgram, programContext);
 
         //if sequential, then join each individual thread here (each component will complete prior to the proceeding component)
@@ -482,4 +470,19 @@ int decodeAmplifiers(int numAmplifiers, bool feedbackMode, int inputOffset, prog
     printf("max signal = %i\n", maxSignal);
     return maxSignal;
 
+}
+
+struct ProgramContext* createContext(int id, program_t* program, int programLength, struct InputReader* reader, struct OutputWriter* writer) {
+    struct ProgramContext* programContext = malloc(sizeof(ProgramContext));
+    //make copy of program and store in context
+    program_t* programCopy = calloc(programLength + 10000, sizeof(program_t));
+    copyProgram(programCopy, program, programLength);
+    programContext->id = id;
+    programContext->relativeBase = 0;
+    programContext->programCounter = 0;
+    programContext->program = programCopy;
+    programContext->programLength = programLength;
+    programContext->reader = reader;
+    programContext->writer = writer;
+    return programContext;
 }

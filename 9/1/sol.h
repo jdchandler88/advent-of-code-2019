@@ -98,3 +98,5 @@ int chainProgram(int numChains, bool feedbackMode, const char** inputs, int inpu
 void executeProgram(struct ProgramContext* context);
 
 void executeInstruction(struct ProgramContext* ctx);
+
+struct ProgramContext* createContext(int id, program_t* program, int programLength, struct InputReader* reader, struct OutputWriter* writer);
