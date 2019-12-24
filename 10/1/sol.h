@@ -12,9 +12,18 @@ typedef struct Map {
   bool** asteroidLocations;
 } Map;
 
+//constants
+const double PI;
+const double PI_OVER_2;
+const double ANGLE_ERROR;
+
+struct Coordinate coordinate(x, y);
+
 struct Map parseMap(FILE* file);
 
 bool isAsteroid(struct Map map, struct Coordinate coordinate);
+
+double angleToLocation(struct Coordinate begin, struct Coordinate end);
 
 bool isAsteroidObstructedFromLocation(struct Map map, struct Coordinate begin, struct Coordinate asteroid);
 

@@ -4,9 +4,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-static void programStringCallback(const char* programString) {
-    
-}
 
 int main(int argc, char** argv) {
     if (argc != 3) {

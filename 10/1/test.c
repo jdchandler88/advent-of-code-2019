@@ -1,6 +1,8 @@
 #include <unity.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <string.h>
+#include "utils.h"
 #include "sol.h"
 
 struct Map one;
@@ -27,26 +29,56 @@ void setUp() {
 void tearDown() {}
 
 void mapParsedCorrectly() {
-    int expectedRow1[] = {0,1,0,0,1};
-    int expectedRow2[] = {0,0,0,0,0};
-    int expectedRow3[] = {1,1,1,1,1};
-    int expectedRow4[] = {0,0,0,0,1};
-    int expectedRow5[] = {0,0,0,1,1};
-    TEST_ASSERT_EQUAL_INT_ARRAY(expectedRow1, one.asteroidLocations[0], 5);
-    TEST_ASSERT_EQUAL_INT_ARRAY(expectedRow2, one.asteroidLocations[1], 5);
-    TEST_ASSERT_EQUAL_INT_ARRAY(expectedRow3, one.asteroidLocations[2], 5);
-    TEST_ASSERT_EQUAL_INT_ARRAY(expectedRow4, one.asteroidLocations[3], 5);
-    TEST_ASSERT_EQUAL_INT_ARRAY(expectedRow5, one.asteroidLocations[4], 5);
+    //row1
+    TEST_ASSERT_EQUAL_INT(false, isAsteroid(one, coordinate(0, 0)));
+    TEST_ASSERT_EQUAL_INT(true, isAsteroid(one, coordinate(1, 0)));
+    TEST_ASSERT_EQUAL_INT(false, isAsteroid(one, coordinate(2, 0)));
+    TEST_ASSERT_EQUAL_INT(false, isAsteroid(one, coordinate(3, 0)));
+    TEST_ASSERT_EQUAL_INT(true, isAsteroid(one, coordinate(4, 0)));
+    //row2
+    TEST_ASSERT_EQUAL_INT(false, isAsteroid(one, coordinate(0, 1)));
+    TEST_ASSERT_EQUAL_INT(false, isAsteroid(one, coordinate(1, 1)));
+    TEST_ASSERT_EQUAL_INT(false, isAsteroid(one, coordinate(2, 1)));
+    TEST_ASSERT_EQUAL_INT(false, isAsteroid(one, coordinate(3, 1)));
+    TEST_ASSERT_EQUAL_INT(false, isAsteroid(one, coordinate(4, 1)));
+    //row3
+    TEST_ASSERT_EQUAL_INT(true, isAsteroid(one, coordinate(0, 2)));
+    TEST_ASSERT_EQUAL_INT(true, isAsteroid(one, coordinate(1, 2)));
+    TEST_ASSERT_EQUAL_INT(true, isAsteroid(one, coordinate(2, 2)));
+    TEST_ASSERT_EQUAL_INT(true, isAsteroid(one, coordinate(3, 2)));
+    TEST_ASSERT_EQUAL_INT(true, isAsteroid(one, coordinate(4, 2)));
+    //row4
+    TEST_ASSERT_EQUAL_INT(false, isAsteroid(one, coordinate(0, 3)));
+    TEST_ASSERT_EQUAL_INT(false, isAsteroid(one, coordinate(1, 3)));
+    TEST_ASSERT_EQUAL_INT(false, isAsteroid(one, coordinate(2, 3)));
+    TEST_ASSERT_EQUAL_INT(false, isAsteroid(one, coordinate(3, 3)));
+    TEST_ASSERT_EQUAL_INT(true, isAsteroid(one, coordinate(4, 3)));
+    //row5
+    TEST_ASSERT_EQUAL_INT(false, isAsteroid(one, coordinate(0, 4)));
+    TEST_ASSERT_EQUAL_INT(false, isAsteroid(one, coordinate(1, 4)));
+    TEST_ASSERT_EQUAL_INT(false, isAsteroid(one, coordinate(2, 4)));
+    TEST_ASSERT_EQUAL_INT(true, isAsteroid(one, coordinate(3, 4)));
+    TEST_ASSERT_EQUAL_INT(true, isAsteroid(one, coordinate(4, 4)));
 }
 
-void stationDetectedAt10() {
-    struct Coordinate asteroidLocation = {.x=1, .y=0};
-    TEST_ASSERT_EQUAL_INT(1, isAsteroid(one, asteroidLocation));
+void originTo10ShouldReturn0Angle() {
+    TEST_ASSERT_FLOAT_WITHIN(.001, 0, angleToLocation(coordinate(0,0), coordinate(1,0)));
 }
 
-void noStationDetectedAt00() {
-    struct Coordinate emptyLocation = {.x=1, .y=0};
-    TEST_ASSERT_EQUAL_INT(0, isAsteroid(one, emptyLocation));
+void originTo01ShouldReturn90Angle() {
+    TEST_ASSERT_FLOAT_WITHIN(.001, PI_OVER_2, angleToLocation(coordinate(0,0), coordinate(0,1)));
+}
+
+void originToN10ShouldReturnPiAngle() {
+    TEST_ASSERT_FLOAT_WITHIN(.001, PI, angleToLocation(coordinate(0,0), coordinate(-1,0)));
+}
+
+void originTo0N1ShouldReturnN90Angle() {
+    TEST_ASSERT_FLOAT_WITHIN(.001, -1*PI_OVER_2, angleToLocation(coordinate(0,0), coordinate(0,-1)));
+}
+
+void originTo11ShouldReturnPIOver4Angle() {
+    TEST_ASSERT_FLOAT_WITHIN(.001, PI/4, angleToLocation(coordinate(0,0), coordinate(1,1)));
 }
 
 /**
@@ -232,7 +264,12 @@ void maxSightingsShouldReturn41At63() {
 // not needed when using generate_test_runner.rb
 int main(void) {
     UNITY_BEGIN();
-    RUN_TEST(maxSightingsShouldReturn8At34);
+    RUN_TEST(mapParsedCorrectly);
+    RUN_TEST(originTo10ShouldReturn0Angle);
+    RUN_TEST(originTo01ShouldReturn90Angle);
+    RUN_TEST(originToN10ShouldReturnPiAngle);
+    RUN_TEST(originTo0N1ShouldReturnN90Angle);
+    RUN_TEST(originTo11ShouldReturnPIOver4Angle);
     RUN_TEST(obstructedShouldReturnTrueFor10At34);
     RUN_TEST(sightingsShouldReturn7At10);
     RUN_TEST(sightingsShouldReturn7At40);
@@ -244,6 +281,7 @@ int main(void) {
     RUN_TEST(sightingsShouldReturn7At43);
     RUN_TEST(sightingsShouldReturn8At34);
     RUN_TEST(sightingsShouldReturn7At44);
+    RUN_TEST(maxSightingsShouldReturn8At34);
     RUN_TEST(maxSightingsShouldReturn33At58);
     RUN_TEST(maxSightingsShouldReturn35At12);
     RUN_TEST(maxSightingsShouldReturn41At63);
