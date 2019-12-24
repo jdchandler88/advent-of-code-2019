@@ -15,9 +15,9 @@ static pthread_mutex_t mutex;
 
 
 #define M_PI 3.14159265358979323846
-const double PI = M_PI;
-const double PI_OVER_2 = PI/2;
-const double ANGLE_ERROR = .001;
+const float PI = M_PI;
+const float PI_OVER_2 = PI/2;
+const float ANGLE_ERROR = .001;
 
 static void lineCallback(const char* line) { 
     numLines++;
@@ -69,7 +69,7 @@ struct Map parseMap(FILE* file) {
 
     //free memory from lines
     for (int i=0; i<numLines; i++) {
-        free(lines[i]);
+        free((void*)lines[i]);
     }
     free(lines);
     numLines = 0;
@@ -83,14 +83,59 @@ bool isAsteroid(struct Map map, struct Coordinate coordinate) {
     return map.asteroidLocations[coordinate.x][coordinate.y];
 }
 
-double angleToLocation(struct Coordinate begin, struct Coordinate end) {
+float angleToLocation(struct Coordinate begin, struct Coordinate end) {
     int diffx = end.x - begin.x;
     int diffy = end.y - begin.y;
     return atan2(diffy, diffx);
 }
 
-bool isAsteroidObstructedFromLocation(struct Map map, struct Coordinate begin, struct Coordinate asteroid) {
+float distanceToLocation(struct Coordinate begin, struct Coordinate end) {
+    int dx = end.x - begin.x;
+    int dy = end.y - begin.y;
+    return sqrt(dx*dx + dy*dy);
+}
 
+static bool floatAlmostEquals(float a, float b) {
+    return fabs(a-b) < ANGLE_ERROR;
+}
+
+bool isAsteroidObstructedFromLocation(struct Map map, struct Coordinate begin, struct Coordinate asteroid) {
+    
+    //calculate the angle between these two
+    float angleBetweenStartAndEnd = angleToLocation(begin, asteroid);
+    float distanceBetweenStartAndEnd = distanceToLocation(begin, asteroid);
+
+    //let's try to be slightly clever about this. we know that given a direction, we can simply exclude 3 "quadrants" of candidates.
+    //for every grid point (not being clever yet)
+    for (int x=0; x<map.width; x++) {
+        for (int y=0; y<map.height; y++) {
+            // printf("x=%i, y=%i\n", x, y);
+            struct Coordinate location = coordinate(x, y);
+            //is it an asteroid?
+            bool isAsteroidAtLocation = isAsteroid(map,  location);
+            if (!isAsteroidAtLocation) {
+                //no asteroid here. not obstructed.
+                continue;
+            }
+
+            //is it in between? (distance less than the distance between start/end)
+            float distance = distanceToLocation(begin, location);
+            if (distance > distanceBetweenStartAndEnd) {
+                //it's farther away than the one we're trying to see. not obstructed
+                continue;
+            }
+
+            //angle between begin and  grid point?
+            float angle = angleToLocation(begin, location);
+            float angleDifference = angleBetweenStartAndEnd-angle;
+            if (fabs(angleDifference) < ANGLE_ERROR) {
+                //there is an asteroid at a distance less than the one we want to see at the same angle. obstructed.
+                return true;
+            }
+        }
+    }
+    //we didn't find an obstruction
+    return false;
 }
 
 int countAsteriodsVisibleAtLocation(struct Map map, struct Coordinate location) {

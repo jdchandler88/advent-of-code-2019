@@ -13,17 +13,19 @@ typedef struct Map {
 } Map;
 
 //constants
-const double PI;
-const double PI_OVER_2;
-const double ANGLE_ERROR;
+const float PI;
+const float PI_OVER_2;
+const float ANGLE_ERROR;
 
-struct Coordinate coordinate(x, y);
+struct Coordinate coordinate(int x, int y);
 
 struct Map parseMap(FILE* file);
 
 bool isAsteroid(struct Map map, struct Coordinate coordinate);
 
-double angleToLocation(struct Coordinate begin, struct Coordinate end);
+float angleToLocation(struct Coordinate begin, struct Coordinate end);
+
+float distanceToLocation(struct Coordinate begin, struct Coordinate end);
 
 bool isAsteroidObstructedFromLocation(struct Map map, struct Coordinate begin, struct Coordinate asteroid);
 

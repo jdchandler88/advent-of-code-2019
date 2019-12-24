@@ -81,6 +81,26 @@ void originTo11ShouldReturnPIOver4Angle() {
     TEST_ASSERT_FLOAT_WITHIN(.001, PI/4, angleToLocation(coordinate(0,0), coordinate(1,1)));
 }
 
+void oritinTo10ShouldReturn1Distance() {
+    TEST_ASSERT_FLOAT_WITHIN(.001, 1, distanceToLocation(coordinate(0,0), coordinate(1,0)));
+}
+
+void originTo01ShouldReturn1Distance() {
+    TEST_ASSERT_FLOAT_WITHIN(.001, 1, distanceToLocation(coordinate(0,0), coordinate(0,1)));
+}
+
+void originToN10ShouldReturn1Distance() {
+    TEST_ASSERT_FLOAT_WITHIN(.001, 1, distanceToLocation(coordinate(0,0), coordinate(-1,0)));
+}
+
+void originTo0N1ShouldReturn1Distance() {
+    TEST_ASSERT_FLOAT_WITHIN(.001, 1, distanceToLocation(coordinate(0,0), coordinate(0,-1)));
+}
+
+void originTo11ShouldReturnSqrt2Distance() {
+    TEST_ASSERT_FLOAT_WITHIN(.001, sqrt(2), distanceToLocation(coordinate(0,0), coordinate(1,1)));
+}
+
 /**
  * need to make sure obstruction detection is working
  *  at (3,4), cannot detect (1,0)
@@ -270,6 +290,11 @@ int main(void) {
     RUN_TEST(originToN10ShouldReturnPiAngle);
     RUN_TEST(originTo0N1ShouldReturnN90Angle);
     RUN_TEST(originTo11ShouldReturnPIOver4Angle);
+    RUN_TEST(originToN10ShouldReturn1Distance);
+    RUN_TEST(originTo01ShouldReturn1Distance);
+    RUN_TEST(originToN10ShouldReturn1Distance);
+    RUN_TEST(originTo0N1ShouldReturn1Distance);
+    RUN_TEST(originTo11ShouldReturnSqrt2Distance);
     RUN_TEST(obstructedShouldReturnTrueFor10At34);
     RUN_TEST(sightingsShouldReturn7At10);
     RUN_TEST(sightingsShouldReturn7At40);
