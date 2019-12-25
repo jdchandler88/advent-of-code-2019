@@ -109,15 +109,18 @@ bool isAsteroidObstructedFromLocation(struct Map map, struct Coordinate begin, s
     //for every grid point (not being clever yet)
     for (int x=0; x<map.width; x++) {
         for (int y=0; y<map.height; y++) {
-            // printf("x=%i, y=%i\n", x, y);
-            struct Coordinate location = coordinate(x, y);
+           struct Coordinate location = coordinate(x, y);
+            //make sure we're not trying to examine the asteroid location. the asteroid cannot obstruct the view of itself
+            if ( (location.x==asteroid.x && location.y==asteroid.y) || (location.x==begin.x && location.y==begin.y) ) {
+                continue;
+            }    
             //is it an asteroid?
             bool isAsteroidAtLocation = isAsteroid(map,  location);
             if (!isAsteroidAtLocation) {
-                //no asteroid here. not obstructed.
+                //no asteroid here. cannot obstruct view.
                 continue;
             }
-
+            // printf("checking (%i,%i)\n", x, y);
             //is it in between? (distance less than the distance between start/end)
             float distance = distanceToLocation(begin, location);
             if (distance > distanceBetweenStartAndEnd) {
@@ -139,9 +142,38 @@ bool isAsteroidObstructedFromLocation(struct Map map, struct Coordinate begin, s
 }
 
 int countAsteriodsVisibleAtLocation(struct Map map, struct Coordinate location) {
-
+    int count = 0;
+    for (int x=0; x<map.width; x++) {
+        for (int y=0; y<map.height; y++) {
+            struct Coordinate examineLocation = coordinate(x, y);
+            if (x==location.x && y==location.y) {
+                //don't count if examine location is the same place we're at
+                continue;
+            }
+            if (isAsteroid(map, examineLocation) && !isAsteroidObstructedFromLocation(map, location, examineLocation)) {
+                count++;
+            }
+        }
+    }
+    return count;
 }
 
 struct Coordinate maxAsteroidsVisibleLocation(int* maxSightings, struct Map map) {
-    
+    *maxSightings = 0;
+    struct Coordinate maxSightingsLocation;
+    for (int x=0; x<map.width; x++) {
+        for (int y=0; y<map.height; y++) {
+            struct Coordinate coord = coordinate(x, y);
+            //can only land on an asteroid. don't count empty spaces
+            if (!isAsteroid(map, coord)) {
+                continue;
+            }
+            int sightings = countAsteriodsVisibleAtLocation(map, coord);
+            if (sightings > *maxSightings) {
+                *maxSightings = sightings;
+                maxSightingsLocation = coord;
+            }
+        }
+    }
+    return maxSightingsLocation;
 }

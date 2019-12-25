@@ -171,6 +171,12 @@ void sightingsShouldReturn7At44() {
 
 /**
  * Overarching system test for code
+ * 
+    .#..#
+    .....
+    #####
+    ....#
+    ...##
  **/
 void maxSightingsShouldReturn8At34() {
     int sightings;
@@ -197,7 +203,7 @@ void maxSightingsShouldReturn8At34() {
  **/ 
 void maxSightingsShouldReturn33At58() {
     int sightings;
-    struct Coordinate location = maxAsteroidsVisibleLocation(&sightings, one);
+    struct Coordinate location = maxAsteroidsVisibleLocation(&sightings, two);
     TEST_ASSERT_EQUAL_INT(5, location.x);
     TEST_ASSERT_EQUAL_INT(8, location.y);
     TEST_ASSERT_EQUAL_INT(33, sightings);
@@ -219,7 +225,7 @@ void maxSightingsShouldReturn33At58() {
  **/ 
 void maxSightingsShouldReturn35At12() {
     int sightings;
-    struct Coordinate location = maxAsteroidsVisibleLocation(&sightings, one);
+    struct Coordinate location = maxAsteroidsVisibleLocation(&sightings, three);
     TEST_ASSERT_EQUAL_INT(1, location.x);
     TEST_ASSERT_EQUAL_INT(2, location.y);
     TEST_ASSERT_EQUAL_INT(35, sightings);
@@ -241,7 +247,7 @@ void maxSightingsShouldReturn35At12() {
  **/ 
 void maxSightingsShouldReturn41At63() {
     int sightings;
-    struct Coordinate location = maxAsteroidsVisibleLocation(&sightings, one);
+    struct Coordinate location = maxAsteroidsVisibleLocation(&sightings, four);
     TEST_ASSERT_EQUAL_INT(6, location.x);
     TEST_ASSERT_EQUAL_INT(3, location.y);
     TEST_ASSERT_EQUAL_INT(41, sightings);
@@ -274,7 +280,7 @@ void maxSightingsShouldReturn41At63() {
   **/
  void maxSightingsShouldReturn210At1113() {
     int sightings;
-    struct Coordinate location = maxAsteroidsVisibleLocation(&sightings, one);
+    struct Coordinate location = maxAsteroidsVisibleLocation(&sightings, five);
     TEST_ASSERT_EQUAL_INT(11, location.x);
     TEST_ASSERT_EQUAL_INT(13, location.y);
     TEST_ASSERT_EQUAL_INT(210, sightings);
