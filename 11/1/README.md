@@ -1,5 +1,5 @@
-# Day 10, step 2
-This is the code to use the ideal spotting station to destroy all other asteroids.
+# Day 11, step 1
+This is the code to utilize IntCode for painting our ship.
 
 # Build the code
 ```bash
