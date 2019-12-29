@@ -18,6 +18,7 @@ static pthread_mutex_t mutex;
 const float PI = M_PI;
 const float PI_OVER_2 = PI/2;
 const float ANGLE_ERROR = .001;
+const float INITIAL_SEARCH_ANGLE = PI_OVER_2-ANGLE_ERROR;
 
 static void lineCallback(const char* line) { 
     numLines++;
@@ -120,7 +121,6 @@ bool isAsteroidObstructedFromLocation(struct Map map, struct Coordinate begin, s
                 //no asteroid here. cannot obstruct view.
                 continue;
             }
-            // printf("checking (%i,%i)\n", x, y);
             //is it in between? (distance less than the distance between start/end)
             float distance = distanceToLocation(begin, location);
             if (distance > distanceBetweenStartAndEnd) {
@@ -178,6 +178,108 @@ struct Coordinate maxAsteroidsVisibleLocation(int* maxSightings, struct Map map)
     return maxSightingsLocation;
 }
 
-struct Coordinate destroyNextAsteroid(struct Map map, float lastAngle) {
+static float conv = (180/PI);
 
+typedef struct AsteroidInfo {
+    struct Coordinate location;
+    float angle;
+    float distance;
+    bool destroyed;
+} AsteroidInfo;
+
+static int sortAsteroid(const void* a, const void* b) {
+    struct AsteroidInfo* info1 = (struct AsteroidInfo*)a;
+    struct AsteroidInfo* info2 = (struct AsteroidInfo*)b;
+    if (floatAlmostEquals(info1->angle, info2->angle)) {
+        if (info1->distance < info2->distance) {
+            return -1;  // a < b
+        } else {
+            return 1;   //a > b
+        }
+    } else if (info1->angle < info2->angle) {
+        return -1;  //  a < b
+    } else {
+        return 1;   // a > b
+    }
+}
+
+struct Coordinate destroyAsteroids(struct Map map, struct Coordinate location, DestructionCallback callback) {
+    
+    //create information about stations
+    struct AsteroidInfo stations[map.width*map.height];
+    int stationCount = 0;
+    for (int x=0; x<map.width; x++) {
+        for (int y=0; y<map.height; y++) {
+            struct Coordinate asteroid = coordinate(x, y);
+            //don't do anything if there is no asteroid or the current iteration points to the location of the laser station
+            if (!isAsteroid(map, coordinate(x,y)) || ( location.x==asteroid.x && location.y==asteroid.y )) {
+                continue;
+            }
+            struct AsteroidInfo stationInfo;
+            memcpy(&stationInfo.location, &asteroid, sizeof(struct Coordinate));
+            // stationInfo.location = asteroid;
+            stationInfo.angle = wrapAngle02Pi(angleToLocation(location, asteroid) + PI);
+            stationInfo.distance = distanceToLocation(location, asteroid);
+            stationInfo.destroyed = false;
+            stations[stationCount++] = stationInfo;
+        }
+    }
+
+    //sort them based on angle and distance
+    qsort(stations, stationCount, sizeof(struct AsteroidInfo), sortAsteroid);
+
+    //find starting asteroid and use a cursor. this cursor will rotate around the array
+    int stationIdx = 0;
+    for (int i=0; i<stationCount; i++) {
+        AsteroidInfo info = stations[i];
+        if (info.angle > INITIAL_SEARCH_ANGLE) {
+            stationIdx = i;
+            break;
+        }
+    }
+
+    //start looping through array destroying each subsequent element. if there are contiguous 
+    //entries with the same angle, then those need to be skipped (until the next rotation)
+    int destructionCount = 0;
+    float lastAngles = INITIAL_SEARCH_ANGLE;
+    while (destructionCount < stationCount) {
+        for (int i=0; i<stationCount; i++) {
+            int remaining = stationCount-destructionCount;
+              AsteroidInfo info = stations[i + stationIdx];
+            bool skipThisAsteroid = false;
+            //is the station already destroyed? if so, then don't do anything.
+            //is the angle the same as one that was previously destroyed? if so, then don't do anything
+            if (info.destroyed || (floatAlmostEquals(info.angle, lastAngles) && remaining > 1)) {
+                // continue;
+                skipThisAsteroid = true;
+            }
+
+            if (!skipThisAsteroid) {
+                //destroy asteroid
+                info.destroyed = true;
+                lastAngles = info.angle;
+                stations[i+stationIdx] = info;
+                destructionCount++;
+                //notify listener
+                callback(info.location);
+            }
+            
+
+            //loop back to beginning of array if none was found by the end
+            if ( (i + stationIdx) == stationCount - 1) {
+                //reset cursor
+                stationIdx = 0;
+                lastAngles = stations[0].angle - ANGLE_ERROR;
+                break;  //exit the current for loop so we can restart with updated initial cursor
+            }
+
+        }
+    }
+}
+
+float wrapAngle02Pi(float angle) {
+    float x = fmod(angle,2*PI);
+    if (x < 0)
+        x += 2*PI;
+    return x;
 }

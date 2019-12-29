@@ -12,10 +12,13 @@ typedef struct Map {
   bool** asteroidLocations;
 } Map;
 
+typedef void(*DestructionCallback)(struct Coordinate);
+
 //constants
 const float PI;
 const float PI_OVER_2;
 const float ANGLE_ERROR;
+const float INITIAL_SEARCH_ANGLE;
 
 struct Coordinate coordinate(int x, int y);
 
@@ -33,4 +36,6 @@ int countAsteriodsVisibleAtLocation(struct Map map, struct Coordinate location);
 
 struct Coordinate maxAsteroidsVisibleLocation(int* maxSightings, struct Map map);
 
-struct Coordinate destroyNextAsteroid(struct Map map, float lastAngle);
+struct Coordinate destroyAsteroids(struct Map map, struct Coordinate location, DestructionCallback callback);
+
+float wrapAngle02Pi(float angle);

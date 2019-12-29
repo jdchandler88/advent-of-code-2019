@@ -10,6 +10,9 @@ struct Map two;
 struct Map three;
 struct Map four;
 struct Map five;
+struct Map six;
+
+struct Queue* destroyedAsteroids;
 
 struct Map getMapFromFile(const char* filename) {
     FILE* f = fopen(filename, "r");
@@ -24,9 +27,13 @@ void setUp() {
     three = getMapFromFile("map3.txt");
     four = getMapFromFile("map4.txt");
     five = getMapFromFile("map5.txt");
+    six = getMapFromFile("map6.txt");
+    destroyedAsteroids = queue_create();
 }
 
-void tearDown() {}
+void tearDown() {
+    queue_destroy(destroyedAsteroids);
+}
 
 void mapParsedCorrectly() {
     //row1
@@ -62,23 +69,36 @@ void mapParsedCorrectly() {
 }
 
 void originTo10ShouldReturn0Angle() {
-    TEST_ASSERT_FLOAT_WITHIN(.001, 0, angleToLocation(coordinate(0,0), coordinate(1,0)));
+    struct Coordinate origin = {.x=0, .y=0};
+    TEST_ASSERT_FLOAT_WITHIN(.001, 0, angleToLocation(origin, coordinate(1,0)));
 }
 
 void originTo01ShouldReturn90Angle() {
-    TEST_ASSERT_FLOAT_WITHIN(.001, PI_OVER_2, angleToLocation(coordinate(0,0), coordinate(0,1)));
+    struct Coordinate origin = {.x=0, .y=0};
+    TEST_ASSERT_FLOAT_WITHIN(.001, PI_OVER_2, angleToLocation(origin, coordinate(0,1)));
 }
 
 void originToN10ShouldReturnPiAngle() {
-    TEST_ASSERT_FLOAT_WITHIN(.001, PI, angleToLocation(coordinate(0,0), coordinate(-1,0)));
+    struct Coordinate origin = {.x=0, .y=0};
+    TEST_ASSERT_FLOAT_WITHIN(.001, PI, angleToLocation(origin, coordinate(-1,0)));
 }
 
 void originTo0N1ShouldReturnN90Angle() {
-    TEST_ASSERT_FLOAT_WITHIN(.001, -1*PI_OVER_2, angleToLocation(coordinate(0,0), coordinate(0,-1)));
+    struct Coordinate origin = {.x=0, .y=0};
+    TEST_ASSERT_FLOAT_WITHIN(.001, -1*PI_OVER_2, angleToLocation(origin, coordinate(0,-1)));
 }
 
 void originTo11ShouldReturnPIOver4Angle() {
-    TEST_ASSERT_FLOAT_WITHIN(.001, PI/4, angleToLocation(coordinate(0,0), coordinate(1,1)));
+    struct Coordinate origin = {.x=0, .y=0};
+    TEST_ASSERT_FLOAT_WITHIN(.001, PI/4, angleToLocation(origin, coordinate(1,1)));
+}
+
+//this shows that we need to rotate the result because x increases DOWNWARD and not UP
+void angleFrom1113To1112ShouldBePiOverTwo() {
+    struct Coordinate origin = {.x=11, .y=13};
+    float angle = angleToLocation(origin, coordinate(11,12)) + PI;
+    angle = wrapAngle02Pi(angle);
+    TEST_ASSERT_FLOAT_WITHIN(.001, PI/2, angle);
 }
 
 void oritinTo10ShouldReturn1Distance() {
@@ -286,7 +306,8 @@ void maxSightingsShouldReturn41At63() {
     TEST_ASSERT_EQUAL_INT(210, sightings);
  }
 
- /**
+ /**Best is 11,13 with 210 other asteroids detected:
+  * 
     The 1st asteroid to be vaporized is at 11,12.
     The 2nd asteroid to be vaporized is at 12,1.
     The 3rd asteroid to be vaporized is at 12,2.
@@ -305,42 +326,101 @@ void assertCoordinateEquals(struct Coordinate expected, struct Coordinate actual
     TEST_ASSERT_EQUAL_INT(expected.y, actual.y);
 }
 
-void testDestructionFunctionsPropertly() {
-    float lastAngle = PI_OVER_2 - .0000000000001;
-    for (int i=1; i<301; i++) {
-        struct Coordinate destroyedAsteroid = destroyNextAsteroid(five, lastAngle);
+void destructionCallback(struct Coordinate location) {
+    //copy coordinate
+    struct Coordinate* coord = malloc(sizeof(struct Coordinate));
+    memcpy(coord, &location, sizeof(struct Coordinate));
+    //creat equeue element for storage
+    struct QueueElement el = {VOIDP, {.anyPointer=coord}};
+    queue_enqueue(destroyedAsteroids, el);
+}
+
+/**
+ * 
+FIRST NINE
+.#....###24...#..
+##...##.13#67..9#
+##...#...5.8####.
+..#.....X...###..
+..#.#.....#....##
+
+
+SECOND NINE
+.#....###.....#..
+##...##...#.....#
+##...#......1234.
+..#.....X...5##..
+..#.9.....8....76
+
+
+THIRD NINE
+.8....###.....#..
+56...9#...#.....#
+34...7...........
+..2.....X....##..
+..1..............
+
+LAST NINE
+......234.....6..
+......1...5.....7
+.................
+........X....89..
+.................
+ **/ 
+void testDestructionFunctionsProperlySmallMap() {
+    struct Coordinate location = {.x=8, .y=3};
+    struct Coordinate destructionLocations[] = {
+        coordinate(8,1), coordinate(9,0), coordinate(9,1), coordinate(10,0), coordinate(9,2), coordinate(11,1), coordinate(12, 1), coordinate(11, 2), coordinate(15,1),
+        coordinate(12,2), coordinate(13,2), coordinate(14,2), coordinate(15,2), coordinate(12,3), coordinate(16, 4), coordinate(15,4), coordinate(10,4), coordinate(4,4),
+        coordinate(2,4), coordinate(2,3), coordinate(0,2), coordinate(1,2), coordinate(0,1), coordinate(1,1), coordinate(5,2), coordinate(1,0), coordinate(5,1),
+        coordinate(6,1), coordinate(6,0), coordinate(7,0), coordinate(8,0), coordinate(10,1), coordinate(14, 0), coordinate(16,1), coordinate(13,3), coordinate(14,3)
+    };
+    destroyAsteroids(six, location, destructionCallback);
+    for (int i=0; i<36; i++) {
+        struct Coordinate destroyedAsteroid = *((struct Coordinate*)queue_dequeue(destroyedAsteroids).element.anyPointer);
+        assertCoordinateEquals(destructionLocations[i], destroyedAsteroid);
+    }
+}
+
+void testDestructionFunctionsPropertlyLargeMap() {
+
+    struct Coordinate location = {.x=11, .y=13};
+    float lastAngle = PI_OVER_2 - .001;
+    destroyAsteroids(five, location, destructionCallback);
+    for (int i=1; i<300; i++) {
+        struct Coordinate destroyedAsteroid = *((struct Coordinate*)queue_dequeue(destroyedAsteroids).element.anyPointer);
         if (i==1) {
-            assertCoordinateEquals(destroyedAsteroid, coordinate(11, 12));
+            assertCoordinateEquals(coordinate(11, 12), destroyedAsteroid);
         }
         if (i==2) {
-            assertCoordinateEquals(destroyedAsteroid, coordinate(12,1));
+            assertCoordinateEquals(coordinate(12,1), destroyedAsteroid);
         }
         if (i==3) {
-            assertCoordinateEquals(destroyedAsteroid, coordinate(12, 2));
+            assertCoordinateEquals(coordinate(12, 2), destroyedAsteroid);
         }
         if (i==10) {
-            assertCoordinateEquals(destroyedAsteroid, coordinate(12, 8));
+            assertCoordinateEquals(coordinate(12, 8), destroyedAsteroid);
         }
         if (i==20) {
-            assertCoordinateEquals(destroyedAsteroid, coordinate(16, 0));
+            assertCoordinateEquals(coordinate(16, 0), destroyedAsteroid);
         }
         if (i==50) {
-            assertCoordinateEquals(destroyedAsteroid, coordinate(16, 9));
+            assertCoordinateEquals(coordinate(16, 9), destroyedAsteroid);
         }
         if (i==100) {
-            assertCoordinateEquals(destroyedAsteroid, coordinate(10, 16));
+            assertCoordinateEquals(coordinate(10, 16), destroyedAsteroid);
         }
         if (i==199) {
-            assertCoordinateEquals(destroyedAsteroid, coordinate(9, 6));
+            assertCoordinateEquals(coordinate(9, 6), destroyedAsteroid);
         }
         if (i==200) {
-            assertCoordinateEquals(destroyedAsteroid, coordinate(8, 2));
+            assertCoordinateEquals(coordinate(8, 2), destroyedAsteroid);
         }
         if (i==201) {
-            assertCoordinateEquals(destroyedAsteroid, coordinate(10, 9));
+            assertCoordinateEquals(coordinate(10, 9), destroyedAsteroid);
         }
         if (i==299) {
-            assertCoordinateEquals(destroyedAsteroid, coordinate(11, 1));
+            assertCoordinateEquals(coordinate(11, 1), destroyedAsteroid);
         }
     }
 }
@@ -354,6 +434,7 @@ int main(void) {
     RUN_TEST(originToN10ShouldReturnPiAngle);
     RUN_TEST(originTo0N1ShouldReturnN90Angle);
     RUN_TEST(originTo11ShouldReturnPIOver4Angle);
+    RUN_TEST(angleFrom1113To1112ShouldBePiOverTwo);
     RUN_TEST(originToN10ShouldReturn1Distance);
     RUN_TEST(originTo01ShouldReturn1Distance);
     RUN_TEST(originToN10ShouldReturn1Distance);
@@ -375,6 +456,7 @@ int main(void) {
     RUN_TEST(maxSightingsShouldReturn35At12);
     RUN_TEST(maxSightingsShouldReturn41At63);
     RUN_TEST(maxSightingsShouldReturn210At1113);
-    RUN_TEST(testDestructionFunctionsPropertly);
+    RUN_TEST(testDestructionFunctionsProperlySmallMap);
+    RUN_TEST(testDestructionFunctionsPropertlyLargeMap);
     return UNITY_END();
 }
