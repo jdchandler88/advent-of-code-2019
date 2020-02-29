@@ -1,0 +1,6 @@
+projectKey=advent-of-code-2019
+serverUrl=http://localhost:9000
+serverVersion=8.2.0.32929
+dashboardUrl=http://localhost:9000/dashboard?id=advent-of-code-2019
+ceTaskId=AXCOgGZIS4R7BWJgLuCc
+ceTaskUrl=http://localhost:9000/api/ce/task?id=AXCOgGZIS4R7BWJgLuCc
